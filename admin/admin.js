@@ -2,6 +2,7 @@
 // Edits content/site.json and media in the GitHub repository through the GitHub API.
 // Nothing is stored on a server: the access token lives only in this browser (localStorage).
 import { allShells } from '../assets/shell.js';
+import { mountWall, SIZES } from '../assets/wall.js';
 
 const CFG_KEY = 'studio.cfg';
 const API = 'https://api.github.com';
@@ -17,6 +18,8 @@ const S = {
   tab: 'projects',
   current: null,     // slug being edited
   busy: false,
+  homeView: 'desktop',
+  homeWall: null,
 };
 
 /* ---------- helpers ---------- */
@@ -222,6 +225,7 @@ function move(arr, i, d) { const j = i + d; if (j < 0 || j >= arr.length) return
 const updown = (i, n) => `<span class="updown"><button data-up="${i}" ${i === 0 ? 'disabled' : ''} aria-label="Move up">↑</button><button data-down="${i}" ${i === n - 1 ? 'disabled' : ''} aria-label="Move down">↓</button></span>`;
 
 function render() {
+  if (S.homeWall) { S.homeWall.stop(); S.homeWall = null; }
   const app = $('#app');
   app.replaceChildren(h(`
     <div>
@@ -394,28 +398,57 @@ function viewHome(wrap) {
     return { t, p, m: p?.media.find((x) => x.id === t.m) };
   }).filter((x) => x.m);
   S.site.home = items.map((x) => x.t);
+  const home = S.site.home;
+  const phone = S.homeView === 'phone';
   const el = h(`
     <div>
       <h2>Homepage</h2>
-      <p class="hint" style="margin-bottom:20px">These tiles play on the front page, filled into two columns in this order. Add or remove shots with the “Homepage” checkbox inside each project.</p>
-      <p><button class="btn" data-shuffle>Shuffle</button></p>
-      ${items.length ? `<div class="homegrid">${items.map(({ p, m }, i) => `
-        <div class="m">
-          <div class="thumb">${m.type === 'video'
-            ? `<video src="${esc(mediaUrl(m.src))}" poster="${esc(mediaUrl(m.poster))}" muted loop playsinline preload="none" onmouseenter="this.play()" onmouseleave="this.pause()"></video>`
-            : `<img src="${esc(mediaUrl(m.src))}" alt="" loading="lazy">`}<span class="badge">${i + 1}</span></div>
-          <div class="bar"><span style="margin-right:auto">${esc(p.title)}</span>
-            <button class="btn quiet" data-up="${i}" ${i === 0 ? 'disabled' : ''} aria-label="Earlier">←</button>
-            <button class="btn quiet" data-down="${i}" ${i === items.length - 1 ? 'disabled' : ''} aria-label="Later">→</button>
-            <button class="btn quiet" data-rm="${i}" aria-label="Remove from homepage">×</button></div>
-        </div>`).join('')}</div>` : '<p class="empty">No tiles yet — tick “Homepage” on a few shots in your projects.</p>'}
+      <p class="hint" style="margin-bottom:18px">This is the real front-page layout. Drag a tile to move it (or use ‹ ›). Set its size with S / M / L — Large gets a whole row.
+        Add or remove shots with the “Homepage” checkbox inside each project.</p>
+      <div class="hometools">
+        <span class="seg" role="group" aria-label="Preview">
+          <button data-view="desktop" aria-pressed="${!phone}">Desktop</button><button data-view="phone" aria-pressed="${phone}">Phone</button>
+        </span>
+        <button class="btn" data-shuffle ${items.length < 2 ? 'disabled' : ''}>Shuffle</button>
+      </div>
+      ${items.length ? `<div class="hwbox ${phone ? 'phone' : ''}"><div class="hw"></div></div>` : '<p class="empty">No tiles yet — tick “Homepage” on a few shots in your projects.</p>'}
     </div>`);
-  const home = S.site.home;
-  el.querySelectorAll('[data-up]').forEach((b) => (b.onclick = () => { move(home, +b.dataset.up, -1); render(); }));
-  el.querySelectorAll('[data-down]').forEach((b) => (b.onclick = () => { move(home, +b.dataset.down, 1); render(); }));
-  el.querySelectorAll('[data-rm]').forEach((b) => (b.onclick = () => { home.splice(+b.dataset.rm, 1); render(); }));
-  $('[data-shuffle]', el).onclick = () => { for (let i = home.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [home[i], home[j]] = [home[j], home[i]]; } render(); };
   wrap.append(el);
+  el.querySelectorAll('[data-view]').forEach((b) => (b.onclick = () => { S.homeView = b.dataset.view; render(); }));
+  $('[data-shuffle]', el).onclick = () => { for (let i = home.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [home[i], home[j]] = [home[j], home[i]]; } render(); };
+  if (!items.length) return;
+
+  const moveTo = (from, to) => { if (from === to) return; const [x] = home.splice(from, 1); home.splice(to, 0, x); render(); };
+  const cells = items.map(({ t, p, m }, i) => {
+    const size = t.s || 'm';
+    const tile = h(`
+      <div class="ht" draggable="true" data-i="${i}">
+        <img src="${esc(mediaUrl(m.type === 'video' ? m.poster : m.src))}" alt="" draggable="false">
+        <span class="tt"><b>${i + 1}</b> ${esc(p.title)}${m.type === 'video' ? ' <i>▶</i>' : ''}</span>
+        <span class="ctl">
+          <button data-mv="-1" ${i === 0 ? 'disabled' : ''} aria-label="Earlier">‹</button>
+          <button data-mv="1" ${i === items.length - 1 ? 'disabled' : ''} aria-label="Later">›</button>
+          <span class="sz">${Object.entries(SIZES).map(([k, l]) => `<button data-s="${k}" aria-pressed="${size === k}" title="${l}">${k.toUpperCase()}</button>`).join('')}</span>
+          <button data-rm aria-label="Remove from homepage">×</button>
+        </span>
+      </div>`);
+    tile.querySelectorAll('[data-mv]').forEach((b) => (b.onclick = () => moveTo(i, i + +b.dataset.mv)));
+    tile.querySelectorAll('[data-s]').forEach((b) => (b.onclick = () => {
+      if (b.dataset.s === 'm') delete t.s; else t.s = b.dataset.s;
+      render();
+    }));
+    $('[data-rm]', tile).onclick = () => { home.splice(i, 1); render(); };
+    tile.ondragstart = (e) => { e.dataTransfer.effectAllowed = 'move'; e.dataTransfer.setData('text/plain', String(i)); tile.classList.add('dragging'); };
+    tile.ondragend = () => tile.classList.remove('dragging');
+    tile.ondragover = (e) => { e.preventDefault(); tile.classList.add('over'); };
+    tile.ondragleave = () => tile.classList.remove('over');
+    tile.ondrop = (e) => { e.preventDefault(); const from = +e.dataTransfer.getData('text/plain'); if (!Number.isNaN(from)) moveTo(from, i); };
+    return { el: tile, ratio: m.ratio || 16 / 9, size };
+  });
+  const box = $('.hw', el);
+  S.homeWall = mountWall(box, cells, {
+    viewport: () => (phone ? { vw: 390, vh: 844 } : { vw: 1440, vh: box.clientWidth * 0.625 }),
+  });
 }
 
 function viewSettings(wrap) {

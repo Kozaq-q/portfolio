@@ -77,8 +77,35 @@ h3 { font-size: 12px; font-weight: 400; color: var(--mute); margin: 18px 0 8px; 
 }
 .drop.over, .drop:hover { border-color: var(--fg); color: var(--fg); }
 
-/* homepage order */
-.homegrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 12px; }
+/* homepage: live wall preview */
+.hometools { display: flex; gap: 12px; align-items: center; margin-bottom: 14px; }
+.seg { display: inline-flex; border: 1px solid var(--line); border-radius: 3px; overflow: hidden; }
+.seg button { border: 0; background: var(--card); padding: 7px 12px; color: var(--mute); }
+.seg button + button { border-left: 1px solid var(--line); }
+.seg button[aria-pressed="true"] { background: var(--fg); color: var(--bg); }
+.hwbox { background: #f2f1ed; border: 1px solid var(--line); }
+.hwbox.phone { width: 392px; max-width: 100%; margin: 0 auto; border-radius: 22px; padding: 14px 0; background: #f2f1ed; }
+.hw { display: flex; flex-direction: column; gap: 3px; padding: 3px; }
+.hwbox.phone .hw { gap: 2px; padding: 2px; }
+.hw .row { display: flex; gap: inherit; }
+.ht { position: relative; min-width: 0; background: var(--soft); overflow: hidden; cursor: grab; container-type: inline-size; user-select: none; }
+.ht img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; pointer-events: none; }
+.ht.dragging { opacity: .35; }
+.ht.over { outline: 2px solid var(--fg); outline-offset: -2px; }
+.ht .tt { position: absolute; left: 8px; top: 7px; right: 8px; color: #fff; font-size: 12px; text-shadow: 0 0 8px rgba(0,0,0,.6); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ht .tt b { font-weight: 500; background: rgba(0,0,0,.55); padding: 0 5px; border-radius: 2px; text-shadow: none; }
+.ht .tt i { font-style: normal; opacity: .8; font-size: 10px; }
+.ht .ctl { position: absolute; left: 6px; right: 6px; bottom: 6px; display: flex; gap: 4px; align-items: center; }
+.ht .ctl button { border: 0; background: rgba(20,20,20,.62); color: #fff; font-size: 12px; min-width: 26px; height: 26px; padding: 0 6px; border-radius: 3px; }
+.ht .ctl button:hover { background: rgba(20,20,20,.85); }
+.ht .ctl button:disabled { opacity: .3; cursor: default; }
+.ht .ctl .sz { display: inline-flex; margin-left: auto; margin-right: auto; }
+.ht .ctl .sz button { border-radius: 0; }
+.ht .ctl .sz button:first-child { border-radius: 3px 0 0 3px; }
+.ht .ctl .sz button:last-child { border-radius: 0 3px 3px 0; }
+.ht .ctl .sz button[aria-pressed="true"] { background: #fff; color: #111; }
+@container (max-width: 190px) { .ht .ctl [data-mv] { display: none; } .ht .tt { font-size: 11px; } }
+@media (hover: hover) { .ht .ctl { opacity: 0; transition: opacity .2s; } .ht:hover .ctl, .ht:focus-within .ctl { opacity: 1; } }
 
 /* login */
 .login { max-width: 520px; margin: 12vh auto; padding: 0 28px; }
