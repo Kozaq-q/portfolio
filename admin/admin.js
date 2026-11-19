@@ -1,8 +1,8 @@
 // Studio — content editor for the portfolio.
 // Edits content/site.json and media in the GitHub repository through the GitHub API.
 // Nothing is stored on a server: the access token lives only in this browser (localStorage).
-import { allShells } from '../assets/shell.js?v=2';
-import { mountWall, SIZES } from '../assets/wall.js?v=2';
+import { allShells, FONTS } from '../assets/shell.js?v=4';
+import { mountWall, SIZES } from '../assets/wall.js?v=4';
 
 const CFG_KEY = 'studio.cfg';
 const API = 'https://api.github.com';
@@ -470,6 +470,7 @@ function viewSettings(wrap) {
       <div class="row">
         <label><span>Site address (after the domain is connected)</span><input data-k="siteUrl" placeholder="https://yourname.com"></label>
         <label><span>Look</span><select data-k="theme"><option value="light">Light</option><option value="dark">Dark</option></select></label>
+        <label><span>Typeface</span><select data-k="font">${Object.entries(FONTS).map(([k, f]) => `<option value="${k}">${esc(f.label)}</option>`).join('')}</select></label>
       </div>
       <label style="display:flex;gap:10px;align-items:flex-start"><input type="checkbox" data-hidden style="width:auto;margin-top:3px"${s.hidden !== false ? ' checked' : ''}>
         <span style="color:var(--fg);font-size:14px">Hide from Google and other search engines<br><small class="hint">Keep this on until the site is ready. The site still opens for anyone who has the link.</small></span></label>

@@ -3,7 +3,19 @@
 // The page content itself is rendered by assets/site.js from content/site.json.
 
 // Bump when assets/*.js or *.css change so browsers fetch the new code instead of a cached copy.
-export const V = '2';
+export const V = '4';
+
+// Typefaces the site can use (Google Fonts). Chosen in Studio → Settings.
+const G = 'https://fonts.googleapis.com/css2?display=swap&family=';
+export const FONTS = {
+  grotesk: { label: 'Schibsted Grotesk — current', url: G + 'Schibsted+Grotesk:ital,wght@0,400;0,500;1,400' },
+  switzer: { label: 'Switzer — quiet Swiss grotesk', url: 'https://api.fontshare.com/v2/css?f[]=switzer@400,500,401&display=swap' },
+  jost: { label: 'Jost — classic geometric, Futura-like', url: G + 'Jost:ital,wght@0,400;0,500;1,400' },
+  franklin: { label: 'Libre Franklin — old American grotesque', url: G + 'Libre+Franklin:ital,wght@0,400;0,500;1,400' },
+  tenor: { label: 'Tenor Sans — soft, humanist, Optima-like', url: G + 'Tenor+Sans' },
+  familjen: { label: 'Familjen Grotesk — Scandinavian, a little character', url: G + 'Familjen+Grotesk:ital,wght@0,400;0,500;1,400' },
+};
+export const fontOf = (s) => (FONTS[s?.font] ? s.font : 'grotesk');
 
 const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 
@@ -21,7 +33,7 @@ export function pageShell(site, project) {
   const canonical = base ? `${base}/${project ? `work/${project.slug}/` : ''}` : '';
 
   return `<!doctype html>
-<html lang="en" data-root="${root}" data-page="${project ? 'project' : 'home'}" data-slug="${project ? esc(project.slug) : ''}" data-theme="${esc(s.theme || 'light')}">
+<html lang="en" data-root="${root}" data-page="${project ? 'project' : 'home'}" data-slug="${project ? esc(project.slug) : ''}" data-theme="${esc(s.theme || 'light')}" data-font="${fontOf(s)}">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -33,7 +45,7 @@ export function pageShell(site, project) {
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Ccircle cx='8' cy='8' r='5' fill='%23161616'/%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Schibsted+Grotesk:ital,wght@0,400;0,500;1,400&display=swap" rel="stylesheet">
+<link href="${FONTS[fontOf(s)].url}" rel="stylesheet">
 <link rel="stylesheet" href="${root}assets/site.css?v=${V}">
 </head>
 <body>

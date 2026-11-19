@@ -1,4 +1,5 @@
-import { mountWall } from './wall.js?v=2';
+import { mountWall } from './wall.js?v=4';
+import { FONTS } from './shell.js?v=4';
 
 const doc = document.documentElement;
 const ROOT = doc.dataset.root || '';
@@ -247,4 +248,21 @@ async function main() {
   (PAGE === 'project' ? project : home)(site, mainEl);
 }
 
-if (document.getElementById('app')) main();
+/* try fonts without publishing: add ?font=garamond (or any key of FONTS) to the address */
+function fontTry() {
+  let f = new URLSearchParams(location.search).get('font');
+  try { if (f) sessionStorage.setItem('fontTry', f); else f = sessionStorage.getItem('fontTry'); } catch {}
+  if (!f || !FONTS[f]) return;
+  const use = (k) => {
+    if (!document.querySelector(`link[data-try="${k}"]`)) document.head.append(h(`<link rel="stylesheet" href="${FONTS[k].url}" data-try="${k}">`));
+    doc.dataset.font = k;
+    try { sessionStorage.setItem('fontTry', k); } catch {}
+    bar.querySelectorAll('button').forEach((b) => b.setAttribute('aria-pressed', b.dataset.f === k));
+  };
+  const bar = h(`<div class="fonttry">${Object.keys(FONTS).map((k) => `<button data-f="${k}" title="${esc(FONTS[k].label)}">${esc(FONTS[k].label.split(' — ')[0])}</button>`).join('')}</div>`);
+  bar.querySelectorAll('button').forEach((b) => (b.onclick = () => use(b.dataset.f)));
+  document.body.append(bar);
+  use(f);
+}
+
+if (document.getElementById('app')) { main(); fontTry(); }
