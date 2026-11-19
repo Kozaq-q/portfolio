@@ -169,12 +169,24 @@ a.cell:hover .label, a.cell:focus-visible .label { opacity: 1; transform: none; 
 .preview .frame { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); max-width: 100%; max-height: 100%; opacity: 0; transition: opacity .5s var(--ease); }
 .preview .frame.on { opacity: 1; }
 
-.sheet.info .wrap { display: grid; grid-template-columns: repeat(12, minmax(0, 1fr)); gap: 24px; min-height: 100%; align-content: space-between; }
-.sheet.info .bio { grid-column: 1 / span 8; font-size: clamp(22px, 2.3vw, 36px); line-height: 1.22; letter-spacing: calc(-.015em * var(--trk)); }
-.sheet.info .bio p { margin: 0 0 .7em; }
-.sheet.info .links { grid-column: 1 / span 12; display: flex; gap: 28px; flex-wrap: wrap; padding-top: 48px; }
-.sheet.info .links a { border-bottom: 1px solid var(--line); padding-bottom: 2px; }
-.sheet.info .links a:hover { border-color: var(--fg); }
+/* contact: small type, a lot of air, one portrait */
+.sheet.info .wrap {
+  display: grid; grid-template-columns: repeat(12, minmax(0, 1fr)); grid-template-rows: 1fr auto;
+  gap: 0 24px; min-height: 100%;
+}
+.portrait { grid-column: 7 / span 3; grid-row: 1 / span 2; align-self: center; margin: 0; padding: 24px 0; }
+.portrait .frame { width: 100%; aspect-ratio: var(--r); max-height: 68vh; max-height: 68svh; }
+.portrait .frame { width: min(100%, calc(68svh * var(--r))); }
+.portrait figcaption { margin-top: 8px; font-size: 11px; color: var(--mute); }
+.sheet.info .text { grid-column: 1 / span 4; grid-row: 2; align-self: end; max-width: 40ch; }
+.sheet.info .nophoto .text { grid-column: 1 / span 5; }
+.sheet.info .bio { font-size: 14px; line-height: 1.55; }
+.sheet.info .bio p { margin: 0 0 1em; }
+.sheet.info .links { display: grid; grid-template-columns: 6.5em 1fr; gap: 4px 12px; margin: 28px 0 0; padding-top: 14px; border-top: 1px solid var(--line); font-size: 13px; }
+.sheet.info .links dt { color: var(--mute); }
+.sheet.info .links dd { margin: 0; }
+.sheet.info .links a { border-bottom: 1px solid transparent; transition: border-color .3s var(--ease); }
+.sheet.info .links a:hover { border-color: currentColor; }
 
 /* ---------- showreel ---------- */
 .reel { position: fixed; inset: 0; z-index: 50; background: #000; display: grid; place-items: center; animation: fade .4s var(--ease); }
@@ -196,7 +208,9 @@ a.cell:hover .label, a.cell:focus-visible .label { opacity: 1; transform: none; 
   .sheet { padding-top: 76px; }
   .sheet.index { grid-template-columns: 1fr; align-content: start; }
   .preview { display: none; }
-  .sheet.info .bio { grid-column: 1 / -1; }
+  .sheet.info .wrap { grid-template-columns: 1fr; grid-template-rows: auto auto; gap: 0; align-content: space-between; }
+  .portrait { grid-column: 1; grid-row: 1; width: 64%; margin-left: auto; padding: 8px 0 40px; }
+  .sheet.info .text, .sheet.info .nophoto .text { grid-column: 1; grid-row: 2; max-width: none; }
   .foot { flex-direction: column; align-items: flex-start; padding-top: 48px; }
   .foot .contact { align-items: flex-start; }
 }

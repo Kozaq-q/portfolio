@@ -1,5 +1,5 @@
-import { mountWall } from './wall.js?v=4';
-import { FONTS } from './shell.js?v=4';
+import { mountWall } from './wall.js?v=5';
+import { FONTS } from './shell.js?v=5';
 
 const doc = document.documentElement;
 const ROOT = doc.dataset.root || '';
@@ -88,7 +88,7 @@ function chrome(site) {
       <nav>
         <button data-open="index">Index</button>
         ${s.showreel ? '<button data-reel>Showreel</button>' : ''}
-        <button data-open="info">Information</button>
+        <button data-open="info">Contact</button>
       </nav>
     </header>`);
 
@@ -119,14 +119,21 @@ function chrome(site) {
 
   const bio = (s.bio || '').split(/\n{2,}/).filter(Boolean).map((t) => `<p>${esc(t).replace(/\n/g, '<br>')}</p>`).join('');
   const insta = s.instagram ? (s.instagram.startsWith('http') ? s.instagram : `https://instagram.com/${s.instagram.replace('@', '')}`) : '';
+  const ph = s.portrait;
   const info = h(`
-    <div class="sheet info" hidden role="dialog" aria-label="Information">
-      <div class="wrap">
-        <div class="bio">${bio}</div>
-        <div class="links">
-          ${s.email ? `<a href="mailto:${esc(s.email)}">${esc(s.email)}</a>` : ''}
-          ${insta ? `<a href="${esc(insta)}" target="_blank" rel="noopener">Instagram</a>` : ''}
-          ${s.showreel ? '<a href="#" data-reel>Showreel</a>' : ''}
+    <div class="sheet info" hidden role="dialog" aria-label="Contact">
+      <div class="wrap${ph?.src ? '' : ' nophoto'}">
+        ${ph?.src ? `<figure class="portrait" style="--r:${+ph.ratio || 0.8}">
+          <div class="frame"><img src="${esc(src(ph.src))}" alt="${esc(s.name)}" loading="lazy" decoding="async" onload="this.classList.add('ready')"></div>
+          ${s.portraitCredit ? `<figcaption>Photo: ${esc(s.portraitCredit)}</figcaption>` : ''}
+        </figure>` : ''}
+        <div class="text">
+          <div class="bio">${bio}</div>
+          <dl class="links">
+            ${s.email ? `<dt>Email</dt><dd><a href="mailto:${esc(s.email)}">${esc(s.email)}</a></dd>` : ''}
+            ${insta ? `<dt>Instagram</dt><dd><a href="${esc(insta)}" target="_blank" rel="noopener">${esc(insta.replace(/^https?:\/\/(www\.)?instagram\.com\//, '@').replace(/\/$/, ''))}</a></dd>` : ''}
+            ${s.showreel ? '<dt>Showreel</dt><dd><a href="#" data-reel>Watch →</a></dd>' : ''}
+          </dl>
         </div>
       </div>
     </div>`);
@@ -137,13 +144,13 @@ function chrome(site) {
   const set = (name) => {
     open = open === name ? null : name;
     for (const [k, el] of Object.entries(sheets)) el.hidden = k !== open;
-    buttons.forEach((b) => (b.textContent = b.dataset.open === open ? 'Close' : b.dataset.open === 'index' ? 'Index' : 'Information'));
+    buttons.forEach((b) => (b.textContent = b.dataset.open === open ? 'Close' : b.dataset.open === 'index' ? 'Index' : 'Contact'));
     document.body.classList.toggle('locked', !!open);
     if (!open && shown) { shown.classList.remove('on'); playIn(shown, false); shown = null; }
   };
   buttons.forEach((b) => (b.onclick = () => set(b.dataset.open)));
   addEventListener('keydown', (e) => { if (e.key === 'Escape' && open) set(open); });
-  if (location.hash === '#info') set('info');
+  if (/^#(info|contact)$/.test(location.hash)) set('info');
 
   for (const b of [...bar.querySelectorAll('[data-reel]'), ...info.querySelectorAll('[data-reel]')]) {
     b.addEventListener('click', (e) => { e.preventDefault(); openReel(s.showreel); });

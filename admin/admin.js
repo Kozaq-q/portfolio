@@ -1,8 +1,8 @@
 // Studio — content editor for the portfolio.
 // Edits content/site.json and media in the GitHub repository through the GitHub API.
 // Nothing is stored on a server: the access token lives only in this browser (localStorage).
-import { allShells, FONTS } from '../assets/shell.js?v=4';
-import { mountWall, SIZES } from '../assets/wall.js?v=4';
+import { allShells, FONTS } from '../assets/shell.js?v=5';
+import { mountWall, SIZES } from '../assets/wall.js?v=5';
 
 const CFG_KEY = 'studio.cfg';
 const API = 'https://api.github.com';
@@ -97,6 +97,7 @@ async function publish() {
     // media still referenced by the site
     const used = new Set();
     for (const p of S.site.projects) for (const m of p.media) { used.add(m.src); if (m.poster) used.add(m.poster); }
+    if (S.site.settings.portrait?.src) used.add(S.site.settings.portrait.src);
     const uploads = [...S.files.entries()].filter(([path, f]) => !f.uploaded && used.has(path));
     let i = 0;
     for (const [path, f] of uploads) {
@@ -465,7 +466,18 @@ function viewSettings(wrap) {
         <label><span>Instagram (handle or link, optional)</span><input data-k="instagram" placeholder="@yourname"></label>
       </div>
       <label><span>Showreel — Vimeo or YouTube link (optional)</span><input data-k="showreel" placeholder="https://vimeo.com/…"></label>
-      <label><span>Information — short bio (empty line = new paragraph)</span><textarea data-k="bio" rows="6"></textarea></label>
+      <h3>Contact page</h3>
+      <div class="portraitbox">
+        <div class="pthumb">${s.portrait?.src ? `<img src="${esc(mediaUrl(s.portrait.src))}" alt="">` : '<span>No photo</span>'}</div>
+        <div class="form" style="gap:10px">
+          <p style="margin:0"><button class="btn" data-pick>${s.portrait?.src ? 'Replace photo' : 'Add your photo'}</button>
+            ${s.portrait?.src ? '<button class="btn quiet danger" data-norm>Remove</button>' : ''}</p>
+          <p class="hint" style="margin:0">A portrait works best (vertical or square). It’s resized automatically.</p>
+          <label><span>Photo credit (optional)</span><input data-k="portraitCredit" placeholder="Photographer’s name"></label>
+          <input type="file" accept="image/*" data-file hidden>
+        </div>
+      </div>
+      <label><span>Bio (empty line = new paragraph)</span><textarea data-k="bio" rows="6"></textarea></label>
       <label><span>Description for Google and link previews</span><input data-k="description"></label>
       <div class="row">
         <label><span>Site address (after the domain is connected)</span><input data-k="siteUrl" placeholder="https://yourname.com"></label>
@@ -480,6 +492,21 @@ function viewSettings(wrap) {
     </div>`);
   bind(el, s);
   $('[data-hidden]', el).onchange = (e) => { s.hidden = e.target.checked; status(); };
+  const file = $('[data-file]', el);
+  $('[data-pick]', el).onclick = () => file.click();
+  file.onchange = async () => {
+    const f = file.files[0];
+    if (!f || !f.type.startsWith('image/')) return;
+    status('Processing…');
+    try {
+      const img = await processImage(f);
+      if (s.portrait?.src) forgetMedia(s.portrait);
+      s.portrait = { src: addFile(`media/about/${uid()}-portrait.${img.ext}`, img.blob), ratio: +img.ratio.toFixed(4) };
+    } catch (e) { toast(e.message, 6000); }
+    render();
+  };
+  const norm = $('[data-norm]', el);
+  if (norm) norm.onclick = () => { forgetMedia(s.portrait); delete s.portrait; render(); };
   $('[data-out]', el).onclick = () => {
     if (dirty() && !confirm('You have unpublished changes. Leave anyway?')) return;
     delete S.cfg.token; save(CFG_KEY, S.cfg); location.reload();
