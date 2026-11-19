@@ -22,7 +22,7 @@ export function pageShell(site, project) {
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>${esc(title)}</title>
+<title>${esc(title)}</title>${s.hidden !== false ? '\n<meta name="robots" content="noindex, nofollow">' : ''}
 <meta name="description" content="${esc(description).slice(0, 300)}">
 <meta property="og:title" content="${esc(title)}">
 <meta property="og:description" content="${esc(description).slice(0, 300)}">

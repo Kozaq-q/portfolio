@@ -438,11 +438,14 @@ function viewSettings(wrap) {
         <label><span>Site address (after the domain is connected)</span><input data-k="siteUrl" placeholder="https://yourname.com"></label>
         <label><span>Look</span><select data-k="theme"><option value="light">Light</option><option value="dark">Dark</option></select></label>
       </div>
+      <label style="display:flex;gap:10px;align-items:flex-start"><input type="checkbox" data-hidden style="width:auto;margin-top:3px"${s.hidden !== false ? ' checked' : ''}>
+        <span style="color:var(--fg);font-size:14px">Hide from Google and other search engines<br><small class="hint">Keep this on until the site is ready. The site still opens for anyone who has the link.</small></span></label>
       <h3>Connection</h3>
       <p class="hint">${S.offline ? 'Preview mode — not connected to GitHub.' : `Connected to <b>${esc(S.cfg.owner)}/${esc(S.cfg.repo)}</b> (${esc(S.cfg.branch)}).`}</p>
       <p><button class="btn" data-out>${S.offline ? 'Connect to GitHub' : 'Sign out on this device'}</button></p>
     </div>`);
   bind(el, s);
+  $('[data-hidden]', el).onchange = (e) => { s.hidden = e.target.checked; status(); };
   $('[data-out]', el).onclick = () => {
     if (dirty() && !confirm('You have unpublished changes. Leave anyway?')) return;
     delete S.cfg.token; save(CFG_KEY, S.cfg); location.reload();
