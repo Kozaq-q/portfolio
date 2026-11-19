@@ -2,6 +2,9 @@
 // Used by the admin panel on publish and by tools/build.mjs locally.
 // The page content itself is rendered by assets/site.js from content/site.json.
 
+// Bump when assets/*.js or *.css change so browsers fetch the new code instead of a cached copy.
+export const V = '2';
+
 const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 
 export function pageShell(site, project) {
@@ -31,12 +34,12 @@ export function pageShell(site, project) {
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Schibsted+Grotesk:ital,wght@0,400;0,500;1,400&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="${root}assets/site.css">
+<link rel="stylesheet" href="${root}assets/site.css?v=${V}">
 </head>
 <body>
 <div id="app"></div>
 <noscript><p style="padding:28px">${esc(s.name)} — ${esc(s.role)}. This site needs JavaScript to show the work.</p></noscript>
-<script type="module" src="${root}assets/site.js"></script>
+<script type="module" src="${root}assets/site.js?v=${V}"></script>
 </body>
 </html>
 `;

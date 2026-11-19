@@ -1,4 +1,4 @@
-import { mountWall } from './wall.js';
+import { mountWall } from './wall.js?v=2';
 
 const doc = document.documentElement;
 const ROOT = doc.dataset.root || '';

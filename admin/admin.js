@@ -1,8 +1,8 @@
 // Studio — content editor for the portfolio.
 // Edits content/site.json and media in the GitHub repository through the GitHub API.
 // Nothing is stored on a server: the access token lives only in this browser (localStorage).
-import { allShells } from '../assets/shell.js';
-import { mountWall, SIZES } from '../assets/wall.js';
+import { allShells } from '../assets/shell.js?v=2';
+import { mountWall, SIZES } from '../assets/wall.js?v=2';
 
 const CFG_KEY = 'studio.cfg';
 const API = 'https://api.github.com';
