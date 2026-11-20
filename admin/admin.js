@@ -1,8 +1,8 @@
 // Studio — content editor for the portfolio.
 // Edits content/site.json and media in the GitHub repository through the GitHub API.
 // Nothing is stored on a server: the access token lives only in this browser (localStorage).
-import { allShells, FONTS } from '../assets/shell.js?v=5';
-import { mountWall, SIZES } from '../assets/wall.js?v=5';
+import { allShells, FONTS } from '../assets/shell.js?v=6';
+import { packRows, renderRows, SIZES, SHAPES } from '../assets/wall.js?v=6';
 
 const CFG_KEY = 'studio.cfg';
 const API = 'https://api.github.com';
@@ -20,6 +20,7 @@ const S = {
   busy: false,
   homeView: 'desktop',
   homeWall: null,
+  homeSel: null,
 };
 
 /* ---------- helpers ---------- */
@@ -394,62 +395,210 @@ function mediaCard(p, m, i) {
 }
 
 function viewHome(wrap) {
-  const items = S.site.home.map((t) => {
-    const p = S.site.projects.find((x) => x.slug === t.p);
-    return { t, p, m: p?.media.find((x) => x.id === t.m) };
-  }).filter((x) => x.m);
-  S.site.home = items.map((x) => x.t);
-  const home = S.site.home;
+  wrap.classList.add('wide');
+  const home = S.site.home = S.site.home.filter((t) => S.site.projects.find((x) => x.slug === t.p)?.media.some((x) => x.id === t.m));
+  const st = S.site.settings;
   const phone = S.homeView === 'phone';
   const el = h(`
     <div>
       <h2>Homepage</h2>
-      <p class="hint" style="margin-bottom:18px">This is the real front-page layout. Drag a tile to move it (or use ‹ ›). Set its size with S / M / L — Large gets a whole row.
+      <p class="hint" style="margin-bottom:18px">A smaller copy of your front page, in its real proportions. Drag tiles to reorder them. Click a tile to set its size and shape.
         Add or remove shots with the “Homepage” checkbox inside each project.</p>
       <div class="hometools">
         <span class="seg" role="group" aria-label="Preview">
           <button data-view="desktop" aria-pressed="${!phone}">Desktop</button><button data-view="phone" aria-pressed="${phone}">Phone</button>
         </span>
-        <button class="btn" data-shuffle ${items.length < 2 ? 'disabled' : ''}>Shuffle</button>
+        <button class="btn" data-shuffle ${home.length < 2 ? 'disabled' : ''}>Shuffle</button>
+        <span class="hint" data-scale style="margin:0 0 0 auto"></span>
       </div>
-      ${items.length ? `<div class="hwbox ${phone ? 'phone' : ''}"><div class="hw"></div></div>` : '<p class="empty">No tiles yet — tick “Homepage” on a few shots in your projects.</p>'}
+      ${home.length ? `
+      <div class="homecols">
+        <div class="stage">
+          <div class="screen ${phone ? 'phone' : ''} ${st.theme === 'dark' ? 'dark' : ''}">
+            <div class="sbar"><span>${esc(st.name)}</span><span>Index<i></i>Contact</span></div>
+            <div class="hw"></div>
+            <div class="fold"><span>end of the first screen</span></div>
+            <div class="sfoot"><span>${esc(st.description || st.role)}</span></div>
+          </div>
+        </div>
+        <aside class="insp"></aside>
+      </div>` : '<p class="empty">No tiles yet — tick “Homepage” on a few shots in your projects.</p>'}
     </div>`);
   wrap.append(el);
   el.querySelectorAll('[data-view]').forEach((b) => (b.onclick = () => { S.homeView = b.dataset.view; render(); }));
-  $('[data-shuffle]', el).onclick = () => { for (let i = home.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [home[i], home[j]] = [home[j], home[i]]; } render(); };
-  if (!items.length) return;
+  $('[data-shuffle]', el).onclick = () => { for (let i = home.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [home[i], home[j]] = [home[j], home[i]]; } update(); };
+  if (!home.length) return;
 
-  const moveTo = (from, to) => { if (from === to) return; const [x] = home.splice(from, 1); home.splice(to, 0, x); render(); };
-  const cells = items.map(({ t, p, m }, i) => {
-    const size = t.s || 'm';
-    const tile = h(`
-      <div class="ht" draggable="true" data-i="${i}">
+  const screen = $('.screen', el), hw = $('.hw', el), insp = $('.insp', el), fold = $('.fold', el), sbar = $('.sbar', el), sfoot = $('.sfoot', el);
+  if (!home.includes(S.homeSel)) S.homeSel = null;
+
+  // one tile element per homepage entry, reused across layouts so moves can animate
+  const tiles = new Map();
+  const tileFor = (t) => {
+    if (tiles.has(t)) return tiles.get(t);
+    const p = S.site.projects.find((x) => x.slug === t.p);
+    const m = p.media.find((x) => x.id === t.m);
+    const node = h(`<div class="ht" tabindex="0">
         <img src="${esc(mediaUrl(m.type === 'video' ? m.poster : m.src))}" alt="" draggable="false">
-        <span class="tt"><b>${i + 1}</b> ${esc(p.title)}${m.type === 'video' ? ' <i>▶</i>' : ''}</span>
-        <span class="ctl">
-          <button data-mv="-1" ${i === 0 ? 'disabled' : ''} aria-label="Earlier">‹</button>
-          <button data-mv="1" ${i === items.length - 1 ? 'disabled' : ''} aria-label="Later">›</button>
-          <span class="sz">${Object.entries(SIZES).map(([k, l]) => `<button data-s="${k}" aria-pressed="${size === k}" title="${l}">${k.toUpperCase()}</button>`).join('')}</span>
-          <button data-rm aria-label="Remove from homepage">×</button>
-        </span>
-      </div>`);
-    tile.querySelectorAll('[data-mv]').forEach((b) => (b.onclick = () => moveTo(i, i + +b.dataset.mv)));
-    tile.querySelectorAll('[data-s]').forEach((b) => (b.onclick = () => {
-      if (b.dataset.s === 'm') delete t.s; else t.s = b.dataset.s;
-      render();
+        <span class="tt"></span></div>`);
+    const c = {
+      el: node, t, p, m,
+      get ratio() { return +t.r || m.ratio || 16 / 9; },
+      get size() { return t.s || 'm'; },
+      get br() { return !!t.br; },
+    };
+    dragable(c);
+    tiles.set(t, c);
+    return c;
+  };
+
+  let k = 1, vp;
+  const lay = () => {
+    vp = phone ? { vw: 390, vh: 844 } : { vw: Math.max(1024, innerWidth), vh: Math.max(560, innerHeight) };
+    const seam = phone ? 2 : 3;
+    k = screen.clientWidth / vp.vw;
+    const cells = home.map(tileFor);
+    cells.forEach((c, i) => {
+      c.el.classList.toggle('sel', c.t === S.homeSel);
+      $('.tt', c.el).textContent = `${i + 1}  ${c.p.title}`;
+    });
+    hw.style.padding = hw.style.gap = `${seam * k}px`;
+    renderRows(hw, packRows(cells, { W: vp.vw - seam * 2, seam, ...vp }), k);
+    // the header, footer and the fold, scaled like the page
+    const pad = (phone ? 16 : 32) * k;
+    sbar.style.cssText = `padding:${(phone ? 16 : 22) * k}px ${pad}px;font-size:${(phone ? 14 : 15) * k}px`;
+    sfoot.style.cssText = `padding:${72 * k}px ${pad}px ${40 * k}px;font-size:${Math.min(54, Math.max(26, vp.vw * 0.034)) * k}px`;
+    fold.style.top = `${vp.vh * k}px`;
+    fold.hidden = hw.offsetHeight < vp.vh * k;
+    $('[data-scale]', el).textContent = `Screen ${vp.vw} × ${vp.vh} shown at ${Math.round(k * 100)}%`;
+  };
+
+  // animate tiles from where they were to where they land
+  const flip = (fn) => {
+    const before = new Map([...tiles.values()].map((c) => [c.el, c.el.getBoundingClientRect()]));
+    fn();
+    for (const c of tiles.values()) {
+      const a = before.get(c.el), b = c.el.getBoundingClientRect();
+      if (!a || !b.width || c.el.classList.contains('lifted')) continue;
+      const dx = a.left - b.left, dy = a.top - b.top, sx = a.width / b.width, sy = a.height / b.height;
+      if (Math.abs(dx) < 1 && Math.abs(dy) < 1 && Math.abs(sx - 1) < .01 && Math.abs(sy - 1) < .01) continue;
+      c.el.animate([{ transformOrigin: '0 0', transform: `translate(${dx}px,${dy}px) scale(${sx},${sy})` }, { transformOrigin: '0 0', transform: 'none' }],
+        { duration: 260, easing: 'cubic-bezier(.2,.7,.2,1)' });
+    }
+  };
+  const update = () => { flip(lay); inspector(); status(); };
+  const moveTo = (t, to) => {
+    const from = home.indexOf(t);
+    to = Math.max(0, Math.min(home.length - 1, to));
+    if (from === to) return;
+    home.splice(from, 1); home.splice(to, 0, t);
+    update();
+  };
+
+  // drag with the mouse or a finger; the other tiles make room as you go
+  function dragable(c) {
+    const node = c.el;
+    node.onpointerdown = (e) => {
+      if (e.button !== 0) return;
+      const r0 = node.getBoundingClientRect();
+      const off = { x: e.clientX - r0.left, y: e.clientY - r0.top };
+      let ghost = null, last = '';
+      node.setPointerCapture(e.pointerId);
+      const onMove = (ev) => {
+        if (!ghost) {
+          if (Math.hypot(ev.clientX - e.clientX, ev.clientY - e.clientY) < 6) return;
+          const r = node.getBoundingClientRect();
+          const w = Math.min(r.width, 260), hgt = w * r.height / r.width;
+          off.x *= w / r.width; off.y *= w / r.width;
+          ghost = node.cloneNode(true);
+          ghost.className = 'ht ghost';
+          ghost.style.cssText = `width:${w}px;height:${hgt}px`;
+          document.body.append(ghost);
+          node.classList.add('lifted');
+          document.body.classList.add('dragging');
+        }
+        ghost.style.transform = `translate(${ev.clientX - off.x}px, ${ev.clientY - off.y}px) rotate(-1.5deg)`;
+        if (ev.clientY < 70) scrollBy(0, -14); else if (ev.clientY > innerHeight - 70) scrollBy(0, 14);
+        const over = document.elementsFromPoint(ev.clientX, ev.clientY).find((x) => x.classList?.contains('ht') && !x.classList.contains('ghost'));
+        if (!over || over === node) return;
+        const target = [...tiles.values()].find((x) => x.el === over);
+        const rr = over.getBoundingClientRect();
+        const after = ev.clientX > rr.left + rr.width / 2;
+        const key = `${home.indexOf(target.t)}${after}`;
+        if (key === last) return;
+        last = key;
+        let to = home.indexOf(target.t) + (after ? 1 : 0);
+        if (home.indexOf(c.t) < to) to -= 1;
+        moveTo(c.t, to);
+      };
+      const onUp = () => {
+        node.removeEventListener('pointermove', onMove);
+        node.removeEventListener('pointerup', onUp);
+        node.removeEventListener('pointercancel', onUp);
+        if (ghost) {
+          const g = ghost.getBoundingClientRect();
+          node.classList.remove('lifted');
+          document.body.classList.remove('dragging');
+          const b = node.getBoundingClientRect();
+          node.animate([{ transformOrigin: '0 0', transform: `translate(${g.left - b.left}px,${g.top - b.top}px) scale(${g.width / b.width})` }, { transformOrigin: '0 0', transform: 'none' }], { duration: 240, easing: 'cubic-bezier(.2,.7,.2,1)' });
+          ghost.remove();
+        }
+        S.homeSel = c.t;
+        lay(); inspector();
+      };
+      node.addEventListener('pointermove', onMove);
+      node.addEventListener('pointerup', onUp);
+      node.addEventListener('pointercancel', onUp);
+    };
+    node.onkeydown = (e) => {
+      if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); S.homeSel = c.t; lay(); inspector(); }
+    };
+  }
+
+  function inspector() {
+    const t = S.homeSel;
+    if (!t) {
+      insp.innerHTML = `<p class="hint" style="margin:0">Click a tile to change its size and shape.</p>
+        <p class="hint">Drag tiles to put them in order — the others make room as you move.</p>
+        <p class="hint">Sizes change how tall a row is, so neighbours adapt too. <b>Full</b> gives a shot the whole width.</p>`;
+      return;
+    }
+    const c = tiles.get(t), i = home.indexOf(t);
+    insp.innerHTML = `
+      <div class="ithumb" style="aspect-ratio:${c.ratio}"><img src="${esc(mediaUrl(c.m.type === 'video' ? c.m.poster : c.m.src))}" alt=""></div>
+      <p class="ititle"><b>${esc(c.p.title)}</b><span>${i + 1} of ${home.length}${c.m.type === 'video' ? ' · clip' : ' · still'}</span></p>
+      <h3>Size</h3>
+      <div class="seg full">${Object.entries(SIZES).map(([key, l]) => `<button data-s="${key}" aria-pressed="${(t.s || 'm') === key}">${l}</button>`).join('')}</div>
+      <h3>Shape on the homepage</h3>
+      <div class="shapes">${SHAPES.map(([key, l]) => `<button data-r="${key}" aria-pressed="${(t.r || '') === key}"><i style="aspect-ratio:${key || c.m.ratio || 1.78}"></i>${l}</button>`).join('')}</div>
+      <label class="check"><input type="checkbox" data-br ${t.br ? 'checked' : ''}> Start a new row with this shot</label>
+      <h3>Position</h3>
+      <div class="seg full"><button data-mv="first" title="Move to the start">First</button><button data-mv="-1" title="Earlier (← key)">←</button><button data-mv="1" title="Later (→ key)">→</button><button data-mv="last" title="Move to the end">Last</button></div>
+      <p style="margin-top:22px;display:flex;justify-content:space-between">
+        <button class="btn quiet" data-desel>Done</button>
+        <button class="btn quiet danger" data-rm>Remove from homepage</button></p>`;
+    insp.querySelectorAll('[data-s]').forEach((b) => (b.onclick = () => { if (b.dataset.s === 'm') delete t.s; else t.s = b.dataset.s; update(); }));
+    insp.querySelectorAll('[data-r]').forEach((b) => (b.onclick = () => { if (!b.dataset.r) delete t.r; else t.r = b.dataset.r; update(); }));
+    $('[data-br]', insp).onchange = (e) => { if (e.target.checked) t.br = true; else delete t.br; update(); };
+    insp.querySelectorAll('[data-mv]').forEach((b) => (b.onclick = () => {
+      const v = b.dataset.mv;
+      moveTo(t, v === 'first' ? 0 : v === 'last' ? home.length - 1 : home.indexOf(t) + +v);
     }));
-    $('[data-rm]', tile).onclick = () => { home.splice(i, 1); render(); };
-    tile.ondragstart = (e) => { e.dataTransfer.effectAllowed = 'move'; e.dataTransfer.setData('text/plain', String(i)); tile.classList.add('dragging'); };
-    tile.ondragend = () => tile.classList.remove('dragging');
-    tile.ondragover = (e) => { e.preventDefault(); tile.classList.add('over'); };
-    tile.ondragleave = () => tile.classList.remove('over');
-    tile.ondrop = (e) => { e.preventDefault(); const from = +e.dataTransfer.getData('text/plain'); if (!Number.isNaN(from)) moveTo(from, i); };
-    return { el: tile, ratio: m.ratio || 16 / 9, size };
-  });
-  const box = $('.hw', el);
-  S.homeWall = mountWall(box, cells, {
-    viewport: () => (phone ? { vw: 390, vh: 844 } : { vw: 1440, vh: box.clientWidth * 0.625 }),
-  });
+    $('[data-desel]', insp).onclick = () => { S.homeSel = null; lay(); inspector(); };
+    $('[data-rm]', insp).onclick = () => { home.splice(home.indexOf(t), 1); tiles.get(t)?.el.remove(); tiles.delete(t); S.homeSel = null; if (!home.length) render(); else update(); };
+  }
+
+  lay();
+  inspector();
+  S.homeKeys = (e) => {
+    if (!S.homeSel || /INPUT|TEXTAREA|SELECT/.test(document.activeElement?.tagName)) return;
+    if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') { e.preventDefault(); moveTo(S.homeSel, home.indexOf(S.homeSel) + (e.key === 'ArrowLeft' ? -1 : 1)); }
+    if (e.key === 'Escape') { S.homeSel = null; lay(); inspector(); }
+  };
+  addEventListener('keydown', S.homeKeys);
+  const ro = new ResizeObserver(() => requestAnimationFrame(lay));
+  ro.observe(screen);
+  S.homeWall = { stop: () => { ro.disconnect(); removeEventListener('keydown', S.homeKeys); } };
 }
 
 function viewSettings(wrap) {

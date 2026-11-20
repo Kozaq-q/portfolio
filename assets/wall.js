@@ -2,10 +2,14 @@
 // Shared by the public site (assets/site.js) and the Studio preview (admin/admin.js),
 // so what you arrange in Studio is exactly what visitors see.
 //
-// Each item: { ratio, size }  size: 's' small, 'm' (default), 'l' large = a row of its own.
+// Each item: { ratio, size, br }
+//   size: 'xs' | 's' | 'm' (default) | 'l' | 'xl' (a row of its own, full width)
+//   br:   true = this tile starts a new row
 
-export const SIZES = { s: 'Small', m: 'Medium', l: 'Large' };
-const FACTOR = { s: 0.62, m: 1 };
+export const SIZES = { xs: 'XS', s: 'S', m: 'M', l: 'L', xl: 'Full' };
+// crop a tile to a fixed shape on the homepage ('' = the shot's own shape)
+export const SHAPES = [['', 'Original'], ['2.39', '2.39 : 1'], ['1.78', '16 : 9'], ['1.33', '4 : 3'], ['1', '1 : 1'], ['0.8', '4 : 5']];
+const FACTOR = { xs: 0.42, s: 0.66, m: 1, l: 1.5 };
 
 export const PHONE = 860; // widths at or below this use the phone layout
 
@@ -13,64 +17,78 @@ export const PHONE = 860; // widths at or below this use the phone layout
 export function packRows(items, { W, seam, vw, vh }) {
   const phone = vw <= PHONE;
   const base = phone ? W * 0.75 : Math.max(240, Math.min(vh * 0.46, W * 0.3));
+  const cap = vh * (phone ? 0.8 : 0.92);
   const fits = (row) => (W - seam * (row.length - 1)) / row.reduce((a, c) => a + c.ratio, 0);
-  const target = (row) => base * Math.min(...row.map((c) => FACTOR[c.size] || 1));
+  const target = (row) => {
+    const f = row.map((c) => FACTOR[c.size] || 1);
+    const hi = Math.max(...f), lo = Math.min(...f);
+    return base * (hi > 1 ? hi : lo);
+  };
+  const off = (h, t) => Math.abs(Math.log(Math.min(h, cap) / t));
 
   const rows = [];
   // a short leftover row is folded into the previous one (or stretched) so the wall stays closed
   const flush = (row) => {
     if (!row.length) return;
     const prev = rows[rows.length - 1];
-    const t = target(row);
-    if (fits(row) <= t * 1.6) rows.push(row);
-    else if (prev && !prev.large && fits([...prev, ...row]) >= target(prev) * 0.55) rows[rows.length - 1] = [...prev, ...row];
+    if (fits(row) <= target(row) * 1.6 || row[0].br || !prev || prev.solo) rows.push(row);
+    else if (fits([...prev, ...row]) >= target(prev) * 0.55) rows[rows.length - 1] = [...prev, ...row];
     else rows.push(row);
   };
 
   let row = [];
   for (const c of items) {
-    if (c.size === 'l') {
+    if (c.size === 'xl') {
       flush(row); row = [];
-      const r = [c]; r.large = true; rows.push(r);
+      const r = [c]; r.solo = true; rows.push(r);
       continue;
     }
-    row.push(c);
-    if (fits(row) <= target(row)) { rows.push(row); row = []; }
+    if (c.br && row.length) { flush(row); row = []; }
+    const next = [...row, c];
+    if (fits(next) <= target(next)) {
+      // close the row at whichever count lands nearest the wanted height
+      if (row.length && off(fits(row), target(row)) < off(fits(next), target(next))) { rows.push(row); row = [c]; }
+      else { rows.push(next); row = []; }
+    } else row = next;
   }
   flush(row);
 
   return rows.map((r) => {
     const natural = fits(r);
-    const height = Math.min(natural, vh * (phone ? 0.8 : 0.92));
+    const height = Math.min(natural, cap);
     return { items: r, height, stretch: height === natural };
   });
 }
 
-// Lays rows of { el, ratio, size } into a container and keeps them fitted on resize.
-export function mountWall(el, cells, { viewport } = {}) {
+// Puts packed rows into a container. k scales everything (Studio shows a smaller copy of the page).
+export function renderRows(el, rows, k = 1) {
+  el.replaceChildren();
+  for (const r of rows) {
+    const div = document.createElement('div');
+    div.className = 'row';
+    if (!r.stretch) div.style.justifyContent = 'center';
+    div.style.height = `${r.height * k}px`;
+    for (const c of r.items) {
+      c.el.style.flex = r.stretch ? `${c.ratio} 1 0` : 'none';
+      c.el.style.width = r.stretch ? '' : `${r.height * c.ratio * k}px`;
+      div.append(c.el);
+    }
+    el.append(div);
+  }
+}
+
+// Lays rows of { el, ratio, size, br } into a container and keeps them fitted on resize.
+export function mountWall(el, cells) {
   let lastKey = '';
   const layout = () => {
     const seam = parseFloat(getComputedStyle(el).rowGap) || 3;
     const pad = parseFloat(getComputedStyle(el).paddingLeft) || 0;
     const W = el.clientWidth - pad * 2;
-    const vp = viewport ? viewport() : { vw: innerWidth, vh: innerHeight };
+    const vp = { vw: innerWidth, vh: innerHeight };
     const key = `${Math.round(W)}x${Math.round(vp.vh / 40)}`; // ignore tiny height jitter (mobile URL bar)
     if (key === lastKey || W <= 0) return;
     lastKey = key;
-    const rows = packRows(cells, { W, seam, ...vp });
-    el.replaceChildren();
-    for (const r of rows) {
-      const div = document.createElement('div');
-      div.className = 'row';
-      if (!r.stretch) div.style.justifyContent = 'center';
-      div.style.height = `${r.height}px`;
-      for (const c of r.items) {
-        c.el.style.flex = r.stretch ? `${c.ratio} 1 0` : 'none';
-        c.el.style.width = r.stretch ? '' : `${r.height * c.ratio}px`;
-        div.append(c.el);
-      }
-      el.append(div);
-    }
+    renderRows(el, packRows(cells, { W, seam, ...vp }));
   };
   layout();
   const ro = 'ResizeObserver' in window ? new ResizeObserver(() => requestAnimationFrame(layout)) : null;

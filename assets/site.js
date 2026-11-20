@@ -1,5 +1,5 @@
-import { mountWall } from './wall.js?v=5';
-import { FONTS } from './shell.js?v=5';
+import { mountWall } from './wall.js?v=6';
+import { FONTS } from './shell.js?v=6';
 
 const doc = document.documentElement;
 const ROOT = doc.dataset.root || '';
@@ -67,7 +67,7 @@ const playIn = (f, on) => {
   if (on) { if (!v.src) v.src = v.dataset.src; v.play().catch(() => {}); } else v.pause();
 };
 
-function cell(m, p, linked = true, size = 'm') {
+function cell(m, p, linked = true, opt = {}) {
   const el = document.createElement(linked ? 'a' : 'div');
   el.className = 'cell';
   if (linked) {
@@ -76,7 +76,7 @@ function cell(m, p, linked = true, size = 'm') {
   }
   el.append(frame(m));
   if (linked) el.append(h(`<span class="label"><span>${esc(p.title)}</span><i>${esc(kind(p))}</i></span>`));
-  return { el, ratio: m.ratio || 16 / 9, size };
+  return { el, ratio: +opt.r || m.ratio || 16 / 9, size: opt.s || 'm', br: !!opt.br };
 }
 
 /* ---------- header + overlays ---------- */
@@ -173,10 +173,10 @@ function openReel(link) {
 
 /* ---------- pages ---------- */
 function home(site, main) {
-  const items = (site.home || []).map(({ p, m, s }) => {
+  const items = (site.home || []).map(({ p, m, s, r, br }) => {
     const pr = site.projects.find((x) => x.slug === p);
     const media = pr?.media.find((x) => x.id === m);
-    return media ? cell(media, pr, true, s || 'm') : null;
+    return media ? cell(media, pr, true, { s, r, br }) : null;
   }).filter(Boolean);
   const w = document.createElement('div');
   w.className = 'wall';
