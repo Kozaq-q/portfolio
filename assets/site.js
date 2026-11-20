@@ -1,5 +1,5 @@
-import { mountWall } from './wall.js?v=6';
-import { FONTS } from './shell.js?v=6';
+import { mountWall, PHONE } from './wall.js?v=8';
+import { FONTS } from './shell.js?v=8';
 
 const doc = document.documentElement;
 const ROOT = doc.dataset.root || '';
@@ -173,11 +173,15 @@ function openReel(link) {
 
 /* ---------- pages ---------- */
 function home(site, main) {
-  const items = (site.home || []).map(({ p, m, s, r, br }) => {
+  const cells = (list, sized) => (list || []).map(({ p, m, s, r, br }) => {
     const pr = site.projects.find((x) => x.slug === p);
     const media = pr?.media.find((x) => x.id === m);
-    return media ? cell(media, pr, true, { s, r, br }) : null;
+    return media ? cell(media, pr, true, sized ? { s, r, br } : { r }) : null;
   }).filter(Boolean);
+  const desk = cells(site.home, true);
+  // phones get their own order and sizes when set up in Studio, otherwise the desktop order with automatic sizes
+  let phone = null;
+  const items = (vw) => vw <= PHONE ? (phone ||= site.homePhone ? cells(site.homePhone, true) : cells(site.home, false)) : desk;
   const w = document.createElement('div');
   w.className = 'wall';
   main.append(w);

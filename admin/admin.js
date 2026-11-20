@@ -1,8 +1,8 @@
 // Studio — content editor for the portfolio.
 // Edits content/site.json and media in the GitHub repository through the GitHub API.
 // Nothing is stored on a server: the access token lives only in this browser (localStorage).
-import { allShells, FONTS } from '../assets/shell.js?v=6';
-import { packRows, renderRows, SIZES, SHAPES } from '../assets/wall.js?v=6';
+import { allShells, FONTS } from '../assets/shell.js?v=8';
+import { packRows, renderRows, SIZES, SHAPES, PHONE_SIZES } from '../assets/wall.js?v=8';
 
 const CFG_KEY = 'studio.cfg';
 const API = 'https://api.github.com';
@@ -109,6 +109,8 @@ async function publish() {
     for (const path of S.removed) if (!used.has(path) && !S.files.has(path)) tree.push({ path, mode: '100644', type: 'blob', sha: null });
 
     // content + generated pages
+    S.site.home = S.site.home.filter((t) => S.site.projects.find((x) => x.slug === t.p)?.media.some((x) => x.id === t.m));
+    syncPhone();
     tree.push({ path: 'content/site.json', mode: '100644', type: 'blob', content: JSON.stringify(S.site, null, 2) + '\n' });
     for (const [path, html] of Object.entries(allShells(S.site))) tree.push({ path, mode: '100644', type: 'blob', content: html });
     const slugs = S.site.projects.map((p) => p.slug);
@@ -336,7 +338,7 @@ function editor(box, p) {
     const next = slugify(slugIn.value);
     if (next === p.slug) return (slugIn.value = p.slug);
     if (S.site.projects.some((x) => x.slug === next)) { toast('Another project already uses this address.'); slugIn.value = p.slug; return; }
-    S.site.home.forEach((t) => { if (t.p === p.slug) t.p = next; });
+    [...S.site.home, ...(S.site.homePhone || [])].forEach((t) => { if (t.p === p.slug) t.p = next; });
     p.slug = next; S.current = next; render();
   };
 
@@ -355,7 +357,7 @@ function editor(box, p) {
   }));
   el.querySelectorAll('[data-onhome]').forEach((c) => (c.onchange = () => {
     const id = c.dataset.onhome;
-    if (c.checked) S.site.home.push({ p: p.slug, m: id });
+    if (c.checked) { S.site.home.push({ p: p.slug, m: id }); S.site.homePhone?.push({ p: p.slug, m: id }); }
     else S.site.home = S.site.home.filter((t) => !(t.p === p.slug && t.m === id));
     status();
   }));
@@ -394,11 +396,23 @@ function mediaCard(p, m, i) {
     </div>`;
 }
 
+// the phone list only ever holds shots that are on the desktop homepage
+function syncPhone() {
+  if (!S.site.homePhone) return;
+  S.site.homePhone = S.site.homePhone.filter((x) => S.site.home.some((t) => t.p === x.p && t.m === x.m));
+}
+
 function viewHome(wrap) {
   wrap.classList.add('wide');
   const home = S.site.home = S.site.home.filter((t) => S.site.projects.find((x) => x.slug === t.p)?.media.some((x) => x.id === t.m));
+  syncPhone();
   const st = S.site.settings;
   const phone = S.homeView === 'phone';
+  const own = !!S.site.homePhone;
+  // what this view edits: the desktop list, the phone's own list, or (phone without its own list) a read-only copy
+  const list = phone && own ? S.site.homePhone : home;
+  const editable = !phone || own;
+  const sized = editable;
   const el = h(`
     <div>
       <h2>Homepage</h2>
@@ -408,7 +422,10 @@ function viewHome(wrap) {
         <span class="seg" role="group" aria-label="Preview">
           <button data-view="desktop" aria-pressed="${!phone}">Desktop</button><button data-view="phone" aria-pressed="${phone}">Phone</button>
         </span>
-        <button class="btn" data-shuffle ${home.length < 2 ? 'disabled' : ''}>Shuffle</button>
+        <button class="btn" data-shuffle ${list.length < 2 || !editable ? 'disabled' : ''}>Shuffle</button>
+        ${phone ? (own
+          ? '<span class="pill">Own phone layout</span><button class="btn quiet" data-unown>Follow desktop again</button>'
+          : '<button class="btn" data-own>Make a separate phone layout</button>') : ''}
         <span class="hint" data-scale style="margin:0 0 0 auto"></span>
       </div>
       ${home.length ? `
@@ -426,11 +443,15 @@ function viewHome(wrap) {
     </div>`);
   wrap.append(el);
   el.querySelectorAll('[data-view]').forEach((b) => (b.onclick = () => { S.homeView = b.dataset.view; render(); }));
-  $('[data-shuffle]', el).onclick = () => { for (let i = home.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [home[i], home[j]] = [home[j], home[i]]; } update(); };
+  $('[data-shuffle]', el).onclick = () => { for (let i = list.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [list[i], list[j]] = [list[j], list[i]]; } update(); };
+  const makeOwn = () => { S.site.homePhone = home.map((t) => ({ p: t.p, m: t.m, ...(t.r ? { r: t.r } : {}) })); S.homeSel = null; render(); toast('The phone now has its own order and sizes.'); };
+  const ownBtn = $('[data-own]', el); if (ownBtn) ownBtn.onclick = makeOwn;
+  const unown = $('[data-unown]', el);
+  if (unown) unown.onclick = () => { if (!confirm('Drop the phone layout? Phones will follow the desktop order again, with automatic sizes.')) return; delete S.site.homePhone; S.homeSel = null; render(); };
   if (!home.length) return;
 
   const screen = $('.screen', el), hw = $('.hw', el), insp = $('.insp', el), fold = $('.fold', el), sbar = $('.sbar', el), sfoot = $('.sfoot', el);
-  if (!home.includes(S.homeSel)) S.homeSel = null;
+  if (!list.includes(S.homeSel)) S.homeSel = null;
 
   // one tile element per homepage entry, reused across layouts so moves can animate
   const tiles = new Map();
@@ -444,8 +465,8 @@ function viewHome(wrap) {
     const c = {
       el: node, t, p, m,
       get ratio() { return +t.r || m.ratio || 16 / 9; },
-      get size() { return t.s || 'm'; },
-      get br() { return !!t.br; },
+      get size() { return sized ? t.s || (phone ? '' : 'm') : ''; },
+      get br() { return sized && !!t.br; },
     };
     dragable(c);
     tiles.set(t, c);
@@ -457,7 +478,7 @@ function viewHome(wrap) {
     vp = phone ? { vw: 390, vh: 844 } : { vw: Math.max(1024, innerWidth), vh: Math.max(560, innerHeight) };
     const seam = phone ? 2 : 3;
     k = screen.clientWidth / vp.vw;
-    const cells = home.map(tileFor);
+    const cells = list.map(tileFor);
     cells.forEach((c, i) => {
       c.el.classList.toggle('sel', c.t === S.homeSel);
       $('.tt', c.el).textContent = `${i + 1}  ${c.p.title}`;
@@ -488,10 +509,10 @@ function viewHome(wrap) {
   };
   const update = () => { flip(lay); inspector(); status(); };
   const moveTo = (t, to) => {
-    const from = home.indexOf(t);
-    to = Math.max(0, Math.min(home.length - 1, to));
+    const from = list.indexOf(t);
+    to = Math.max(0, Math.min(list.length - 1, to));
     if (from === to) return;
-    home.splice(from, 1); home.splice(to, 0, t);
+    list.splice(from, 1); list.splice(to, 0, t);
     update();
   };
 
@@ -500,6 +521,7 @@ function viewHome(wrap) {
     const node = c.el;
     node.onpointerdown = (e) => {
       if (e.button !== 0) return;
+      if (!editable) { S.homeSel = c.t; lay(); inspector(); return; }
       const r0 = node.getBoundingClientRect();
       const off = { x: e.clientX - r0.left, y: e.clientY - r0.top };
       let ghost = null, last = '';
@@ -524,11 +546,11 @@ function viewHome(wrap) {
         const target = [...tiles.values()].find((x) => x.el === over);
         const rr = over.getBoundingClientRect();
         const after = ev.clientX > rr.left + rr.width / 2;
-        const key = `${home.indexOf(target.t)}${after}`;
+        const key = `${list.indexOf(target.t)}${after}`;
         if (key === last) return;
         last = key;
-        let to = home.indexOf(target.t) + (after ? 1 : 0);
-        if (home.indexOf(c.t) < to) to -= 1;
+        let to = list.indexOf(target.t) + (after ? 1 : 0);
+        if (list.indexOf(c.t) < to) to -= 1;
         moveTo(c.t, to);
       };
       const onUp = () => {
@@ -557,18 +579,38 @@ function viewHome(wrap) {
 
   function inspector() {
     const t = S.homeSel;
+    if (!editable) {
+      insp.innerHTML = `<p style="margin:0">On phones the homepage follows the desktop order, with sizes picked automatically.</p>
+        <p class="hint">Make a separate phone layout to choose a different order, sizes and shots for phones. The desktop stays as it is.</p>
+        <p><button class="btn primary" data-own2>Make a separate phone layout</button></p>`;
+      $('[data-own2]', insp).onclick = makeOwn;
+      return;
+    }
+    const hiddenOnPhone = phone ? home.filter((x) => !list.some((y) => y.p === x.p && y.m === x.m)) : [];
+    const tray = hiddenOnPhone.length ? `<h3>Not shown on phones</h3><div class="tray">${hiddenOnPhone.map((x, n) => {
+      const p = S.site.projects.find((q) => q.slug === x.p), m = p.media.find((q) => q.id === x.m);
+      return `<button data-addph="${n}" title="Show “${esc(p.title)}” on phones"><img src="${esc(mediaUrl(m.type === 'video' ? m.poster : m.src))}" alt=""><span>+</span></button>`;
+    }).join('')}</div>` : '';
+    const bindTray = () => insp.querySelectorAll('[data-addph]').forEach((b) => (b.onclick = () => {
+      const x = hiddenOnPhone[+b.dataset.addph];
+      const n = { p: x.p, m: x.m, ...(x.r ? { r: x.r } : {}) };
+      list.push(n); S.homeSel = n; update();
+    }));
     if (!t) {
       insp.innerHTML = `<p class="hint" style="margin:0">Click a tile to change its size and shape.</p>
         <p class="hint">Drag tiles to put them in order — the others make room as you move.</p>
-        <p class="hint">Sizes change how tall a row is, so neighbours adapt too. <b>Full</b> gives a shot the whole width.</p>`;
+        <p class="hint">${phone
+          ? 'On phones a size is a share of the screen width: ⅓, ½ or Full. Shots you hide here stay on the desktop.'
+          : 'Sizes change how tall a row is, so neighbours adapt too. <b>Full</b> gives a shot the whole width.'}</p>${tray}`;
+      bindTray();
       return;
     }
-    const c = tiles.get(t), i = home.indexOf(t);
+    const c = tiles.get(t), i = list.indexOf(t);
     insp.innerHTML = `
       <div class="ithumb" style="aspect-ratio:${c.ratio}"><img src="${esc(mediaUrl(c.m.type === 'video' ? c.m.poster : c.m.src))}" alt=""></div>
-      <p class="ititle"><b>${esc(c.p.title)}</b><span>${i + 1} of ${home.length}${c.m.type === 'video' ? ' · clip' : ' · still'}</span></p>
-      <h3>Size</h3>
-      <div class="seg full">${Object.entries(SIZES).map(([key, l]) => `<button data-s="${key}" aria-pressed="${(t.s || 'm') === key}">${l}</button>`).join('')}</div>
+      <p class="ititle"><b>${esc(c.p.title)}</b><span>${i + 1} of ${list.length}${c.m.type === 'video' ? ' · clip' : ' · still'}</span></p>
+      <h3>${phone ? 'Size on phones' : 'Size'}</h3>
+      <div class="seg full">${(phone ? PHONE_SIZES : Object.entries(SIZES)).map(([key, l]) => `<button data-s="${key}" aria-pressed="${(t.s || (phone ? '' : 'm')) === key}">${l}</button>`).join('')}</div>
       <h3>Shape on the homepage</h3>
       <div class="shapes">${SHAPES.map(([key, l]) => `<button data-r="${key}" aria-pressed="${(t.r || '') === key}"><i style="aspect-ratio:${key || c.m.ratio || 1.78}"></i>${l}</button>`).join('')}</div>
       <label class="check"><input type="checkbox" data-br ${t.br ? 'checked' : ''}> Start a new row with this shot</label>
@@ -576,23 +618,28 @@ function viewHome(wrap) {
       <div class="seg full"><button data-mv="first" title="Move to the start">First</button><button data-mv="-1" title="Earlier (← key)">←</button><button data-mv="1" title="Later (→ key)">→</button><button data-mv="last" title="Move to the end">Last</button></div>
       <p style="margin-top:22px;display:flex;justify-content:space-between">
         <button class="btn quiet" data-desel>Done</button>
-        <button class="btn quiet danger" data-rm>Remove from homepage</button></p>`;
-    insp.querySelectorAll('[data-s]').forEach((b) => (b.onclick = () => { if (b.dataset.s === 'm') delete t.s; else t.s = b.dataset.s; update(); }));
+        <button class="btn quiet danger" data-rm>${phone ? 'Hide on phones' : 'Remove from homepage'}</button></p>${tray}`;
+    bindTray();
+    insp.querySelectorAll('[data-s]').forEach((b) => (b.onclick = () => { if (b.dataset.s === (phone ? '' : 'm')) delete t.s; else t.s = b.dataset.s; update(); }));
     insp.querySelectorAll('[data-r]').forEach((b) => (b.onclick = () => { if (!b.dataset.r) delete t.r; else t.r = b.dataset.r; update(); }));
     $('[data-br]', insp).onchange = (e) => { if (e.target.checked) t.br = true; else delete t.br; update(); };
     insp.querySelectorAll('[data-mv]').forEach((b) => (b.onclick = () => {
       const v = b.dataset.mv;
-      moveTo(t, v === 'first' ? 0 : v === 'last' ? home.length - 1 : home.indexOf(t) + +v);
+      moveTo(t, v === 'first' ? 0 : v === 'last' ? list.length - 1 : list.indexOf(t) + +v);
     }));
     $('[data-desel]', insp).onclick = () => { S.homeSel = null; lay(); inspector(); };
-    $('[data-rm]', insp).onclick = () => { home.splice(home.indexOf(t), 1); tiles.get(t)?.el.remove(); tiles.delete(t); S.homeSel = null; if (!home.length) render(); else update(); };
+    $('[data-rm]', insp).onclick = () => {
+      list.splice(list.indexOf(t), 1); tiles.get(t)?.el.remove(); tiles.delete(t); S.homeSel = null;
+      if (!phone) syncPhone();
+      if (!list.length) render(); else update();
+    };
   }
 
   lay();
   inspector();
   S.homeKeys = (e) => {
     if (!S.homeSel || /INPUT|TEXTAREA|SELECT/.test(document.activeElement?.tagName)) return;
-    if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') { e.preventDefault(); moveTo(S.homeSel, home.indexOf(S.homeSel) + (e.key === 'ArrowLeft' ? -1 : 1)); }
+    if (editable && (e.key === 'ArrowLeft' || e.key === 'ArrowRight')) { e.preventDefault(); moveTo(S.homeSel, list.indexOf(S.homeSel) + (e.key === 'ArrowLeft' ? -1 : 1)); }
     if (e.key === 'Escape') { S.homeSel = null; lay(); inspector(); }
   };
   addEventListener('keydown', S.homeKeys);

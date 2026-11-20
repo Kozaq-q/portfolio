@@ -11,11 +11,17 @@ export const SIZES = { xs: 'XS', s: 'S', m: 'M', l: 'L', xl: 'Full' };
 export const SHAPES = [['', 'Original'], ['2.39', '2.39 : 1'], ['1.78', '16 : 9'], ['1.33', '4 : 3'], ['1', '1 : 1'], ['0.8', '4 : 5']];
 const FACTOR = { xs: 0.42, s: 0.66, m: 1, l: 1.5 };
 
+// Phone: sizes are shares of the row width, so each step is clearly different.
+// (no size = automatic: landscape shots full width, vertical ones two in a row)
+export const PHONE_SIZES = [['', 'Auto'], ['s', '⅓'], ['m', '½'], ['l', 'Full']];
+const SHARE = { s: 1 / 3, m: 1 / 2, l: 1 };
+
 export const PHONE = 860; // widths at or below this use the phone layout
 
 // W: inner width, seam: gap px, vw/vh: viewport size (decides phone vs desktop and caps height)
 export function packRows(items, { W, seam, vw, vh }) {
   const phone = vw <= PHONE;
+  if (phone) return packPhone(items, { W, seam, vh });
   const base = phone ? W * 0.75 : Math.max(240, Math.min(vh * 0.46, W * 0.3));
   const cap = vh * (phone ? 0.8 : 0.92);
   const fits = (row) => (W - seam * (row.length - 1)) / row.reduce((a, c) => a + c.ratio, 0);
@@ -60,6 +66,29 @@ export function packRows(items, { W, seam, vw, vh }) {
   });
 }
 
+function packPhone(items, { W, seam, vh }) {
+  const fits = (row) => (W - seam * (row.length - 1)) / row.reduce((a, c) => a + c.ratio, 0);
+  const share = (c) => SHARE[c.size] || (c.ratio < 1 ? 1 / 2 : 1);
+  const rows = [];
+  let row = [], sum = 0;
+  const close = () => { if (row.length) rows.push({ row, sum }); row = []; sum = 0; };
+  for (const c of items) {
+    const sh = share(c);
+    if (row.length && (c.br || sum + sh > 1.01)) close();
+    row.push(c); sum += sh;
+    if (sum >= 0.99) close();
+  }
+  close();
+  const cap = vh * 0.8;
+  // a row that isn't full keeps its tiles at their chosen share instead of stretching them
+  return rows.map(({ row: r, sum: f }) => {
+    const natural = fits(r);
+    const full = f >= 0.99;
+    const height = Math.min(full ? natural : (W * Math.min(1, f) - seam * (r.length - 1)) / r.reduce((a, c) => a + c.ratio, 0), cap);
+    return { items: r, height, stretch: full && height === natural };
+  });
+}
+
 // Puts packed rows into a container. k scales everything (Studio shows a smaller copy of the page).
 export function renderRows(el, rows, k = 1) {
   el.replaceChildren();
@@ -78,17 +107,19 @@ export function renderRows(el, rows, k = 1) {
 }
 
 // Lays rows of { el, ratio, size, br } into a container and keeps them fitted on resize.
+// cells can also be a function (viewportWidth) => cells, e.g. a separate list for phones.
 export function mountWall(el, cells) {
-  let lastKey = '';
+  let lastKey = '', lastList = null;
   const layout = () => {
     const seam = parseFloat(getComputedStyle(el).rowGap) || 3;
     const pad = parseFloat(getComputedStyle(el).paddingLeft) || 0;
     const W = el.clientWidth - pad * 2;
     const vp = { vw: innerWidth, vh: innerHeight };
-    const key = `${Math.round(W)}x${Math.round(vp.vh / 40)}`; // ignore tiny height jitter (mobile URL bar)
-    if (key === lastKey || W <= 0) return;
-    lastKey = key;
-    renderRows(el, packRows(cells, { W, seam, ...vp }));
+    const list = typeof cells === 'function' ? cells(vp.vw) : cells;
+    const key = `${Math.round(W)}x${Math.round(vp.vh / 40)}x${list.length}${list === lastList}`; // ignore tiny height jitter (mobile URL bar)
+    if ((key === lastKey && list === lastList) || W <= 0) return;
+    lastKey = key; lastList = list;
+    renderRows(el, packRows(list, { W, seam, ...vp }));
   };
   layout();
   const ro = 'ResizeObserver' in window ? new ResizeObserver(() => requestAnimationFrame(layout)) : null;
