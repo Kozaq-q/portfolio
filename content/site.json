@@ -24,6 +24,149 @@
   },
   "projects": [
     {
+      "slug": "profundum",
+      "title": "Profundum",
+      "type": "Fashion film",
+      "year": 2026,
+      "crew": [
+        {
+          "role": "Director",
+          "name": "Ivan Krupenikov"
+        },
+        {
+          "role": "Cinematographer",
+          "name": "Paweł Kozak"
+        }
+      ],
+      "description": "",
+      "festivals": [],
+      "film": "https://vimeo.com/pkozak/profundum?fl=tl&fe=ec&share=copy",
+      "media": [
+        {
+          "id": "mwqj61flt1vj",
+          "type": "video",
+          "src": "r2:media/project/mwqj619jrh9t-profundum1-portfolio.mov",
+          "poster": "media/project/mwqj619jrh9t-profundum1-portfolio-poster.webp",
+          "ratio": 1.7778
+        },
+        {
+          "id": "mwqj65mtz2cf",
+          "type": "video",
+          "src": "r2:media/project/mwqj65gka3da-profundum2-portfolio.mov",
+          "poster": "media/project/mwqj65gka3da-profundum2-portfolio-poster.webp",
+          "ratio": 1.7778
+        },
+        {
+          "id": "mwqj68j7q4te",
+          "type": "video",
+          "src": "r2:media/project/mwqj68bxx474-profundum3-portfolio.mov",
+          "poster": "media/project/mwqj68bxx474-profundum3-portfolio-poster.webp",
+          "ratio": 1.7778
+        }
+      ]
+    },
+    {
+      "slug": "metro4x",
+      "title": "Metro4x - \"Nic nie płonie\"",
+      "type": "Music Video clip",
+      "year": 2025,
+      "crew": [
+        {
+          "role": "Director",
+          "name": "Naomi"
+        },
+        {
+          "role": "Cinematographer",
+          "name": "Paweł Kozak"
+        }
+      ],
+      "description": "",
+      "festivals": [],
+      "film": "https://vimeo.com/1129202706/7209890144?fl=tl&fe=ec&share=copy",
+      "media": [
+        {
+          "id": "mwqk6349x733",
+          "type": "video",
+          "src": "r2:media/metro4x/mwqk62zeoirx-metro1-portfolio.mov",
+          "poster": "media/metro4x/mwqk62zeoirx-metro1-portfolio-poster.webp",
+          "ratio": 1.6667
+        },
+        {
+          "id": "mwqk67dgwtk6",
+          "type": "video",
+          "src": "r2:media/metro4x/mwqk677kano5-metro2-portfolio.mov",
+          "poster": "media/metro4x/mwqk677kano5-metro2-portfolio-poster.webp",
+          "ratio": 1.6667
+        },
+        {
+          "id": "mwqk67hes4yv",
+          "type": "video",
+          "src": "r2:media/metro4x/mwqk67dgewg5-metro3-portfolio.mov",
+          "poster": "media/metro4x/mwqk67dgewg5-metro3-portfolio-poster.webp",
+          "ratio": 1.6667
+        },
+        {
+          "id": "mwqk67l9gx4d",
+          "type": "image",
+          "src": "media/metro4x/mwqk67heql0i-still-2026-11-21-162049-1-5-1.webp",
+          "ratio": 1.6667
+        }
+      ]
+    },
+    {
+      "slug": "gooddog",
+      "title": "Beware of good dog",
+      "type": "Short film",
+      "year": 2024,
+      "crew": [
+        {
+          "role": "Director",
+          "name": "Adelina Borets"
+        },
+        {
+          "role": "Cinematographer",
+          "name": "Paweł Kozak"
+        }
+      ],
+      "description": "",
+      "festivals": [],
+      "film": "",
+      "media": [
+        {
+          "id": "mwqt6wwrv0yg",
+          "type": "video",
+          "src": "r2:media/gooddog/mwqt6vf17qxz-udb4-portfolio.mov",
+          "poster": "media/gooddog/mwqt6vf17qxz-udb4-portfolio-poster.webp",
+          "ratio": 1.3724
+        },
+        {
+          "id": "mwqt6x3k81qz",
+          "type": "video",
+          "src": "r2:media/gooddog/mwqt6wwr168r-udb3-portfolio.mov",
+          "poster": "media/gooddog/mwqt6wwr168r-udb3-portfolio-poster.webp",
+          "ratio": 1.3724
+        },
+        {
+          "id": "mwqt9rkvisjj",
+          "type": "image",
+          "src": "media/gooddog/mwqt9reo4n01-zrzut-ekranu-2024-06-10-o-23-00-10.webp",
+          "ratio": 1.2964
+        },
+        {
+          "id": "mwqt9rrqxhrw",
+          "type": "image",
+          "src": "media/gooddog/mwqt9rkvhv3g-zrzut-ekranu-2024-06-10-o-22-59-18.webp",
+          "ratio": 1.3008
+        },
+        {
+          "id": "mwqt9ryjet21",
+          "type": "image",
+          "src": "media/gooddog/mwqt9rrqm60l-zrzut-ekranu-2024-06-10-o-22-52-08.webp",
+          "ratio": 1.2971
+        }
+      ]
+    },
+    {
       "slug": "pipsquick",
       "title": "Pipsquick",
       "type": "Short film",
@@ -84,149 +227,6 @@
           "type": "image",
           "src": "media/pipsquick/mwquarq1p027-grajdlo-stills-final-1-1-12.webp",
           "ratio": 1.85
-        }
-      ]
-    },
-    {
-      "slug": "profundum",
-      "title": "Profundum",
-      "type": "Fashion film",
-      "year": 2026,
-      "crew": [
-        {
-          "role": "Director",
-          "name": "Ivan Krupenikov"
-        },
-        {
-          "role": "Cinematographer",
-          "name": "Paweł Kozak"
-        }
-      ],
-      "description": "",
-      "festivals": [],
-      "film": "https://vimeo.com/pkozak/profundum?fl=tl&fe=ec&share=copy",
-      "media": [
-        {
-          "id": "mwqj61flt1vj",
-          "type": "video",
-          "src": "r2:media/project/mwqj619jrh9t-profundum1-portfolio.mov",
-          "poster": "media/project/mwqj619jrh9t-profundum1-portfolio-poster.webp",
-          "ratio": 1.7778
-        },
-        {
-          "id": "mwqj65mtz2cf",
-          "type": "video",
-          "src": "r2:media/project/mwqj65gka3da-profundum2-portfolio.mov",
-          "poster": "media/project/mwqj65gka3da-profundum2-portfolio-poster.webp",
-          "ratio": 1.7778
-        },
-        {
-          "id": "mwqj68j7q4te",
-          "type": "video",
-          "src": "r2:media/project/mwqj68bxx474-profundum3-portfolio.mov",
-          "poster": "media/project/mwqj68bxx474-profundum3-portfolio-poster.webp",
-          "ratio": 1.7778
-        }
-      ]
-    },
-    {
-      "slug": "gooddog",
-      "title": "Beware of good dog",
-      "type": "Short film",
-      "year": 2024,
-      "crew": [
-        {
-          "role": "Director",
-          "name": "Adelina Borets"
-        },
-        {
-          "role": "Cinematographer",
-          "name": "Paweł Kozak"
-        }
-      ],
-      "description": "",
-      "festivals": [],
-      "film": "",
-      "media": [
-        {
-          "id": "mwqt6wwrv0yg",
-          "type": "video",
-          "src": "r2:media/gooddog/mwqt6vf17qxz-udb4-portfolio.mov",
-          "poster": "media/gooddog/mwqt6vf17qxz-udb4-portfolio-poster.webp",
-          "ratio": 1.3724
-        },
-        {
-          "id": "mwqt6x3k81qz",
-          "type": "video",
-          "src": "r2:media/gooddog/mwqt6wwr168r-udb3-portfolio.mov",
-          "poster": "media/gooddog/mwqt6wwr168r-udb3-portfolio-poster.webp",
-          "ratio": 1.3724
-        },
-        {
-          "id": "mwqt9rkvisjj",
-          "type": "image",
-          "src": "media/gooddog/mwqt9reo4n01-zrzut-ekranu-2024-06-10-o-23-00-10.webp",
-          "ratio": 1.2964
-        },
-        {
-          "id": "mwqt9rrqxhrw",
-          "type": "image",
-          "src": "media/gooddog/mwqt9rkvhv3g-zrzut-ekranu-2024-06-10-o-22-59-18.webp",
-          "ratio": 1.3008
-        },
-        {
-          "id": "mwqt9ryjet21",
-          "type": "image",
-          "src": "media/gooddog/mwqt9rrqm60l-zrzut-ekranu-2024-06-10-o-22-52-08.webp",
-          "ratio": 1.2971
-        }
-      ]
-    },
-    {
-      "slug": "metro4x",
-      "title": "Metro4x - \"Nic nie płonie\"",
-      "type": "Music Video clip",
-      "year": 2025,
-      "crew": [
-        {
-          "role": "Director",
-          "name": "Naomi"
-        },
-        {
-          "role": "Cinematographer",
-          "name": "Paweł Kozak"
-        }
-      ],
-      "description": "",
-      "festivals": [],
-      "film": "https://vimeo.com/1129202706/7209890144?fl=tl&fe=ec&share=copy",
-      "media": [
-        {
-          "id": "mwqk6349x733",
-          "type": "video",
-          "src": "r2:media/metro4x/mwqk62zeoirx-metro1-portfolio.mov",
-          "poster": "media/metro4x/mwqk62zeoirx-metro1-portfolio-poster.webp",
-          "ratio": 1.6667
-        },
-        {
-          "id": "mwqk67dgwtk6",
-          "type": "video",
-          "src": "r2:media/metro4x/mwqk677kano5-metro2-portfolio.mov",
-          "poster": "media/metro4x/mwqk677kano5-metro2-portfolio-poster.webp",
-          "ratio": 1.6667
-        },
-        {
-          "id": "mwqk67hes4yv",
-          "type": "video",
-          "src": "r2:media/metro4x/mwqk67dgewg5-metro3-portfolio.mov",
-          "poster": "media/metro4x/mwqk67dgewg5-metro3-portfolio-poster.webp",
-          "ratio": 1.6667
-        },
-        {
-          "id": "mwqk67l9gx4d",
-          "type": "image",
-          "src": "media/metro4x/mwqk67heql0i-still-2026-11-21-162049-1-5-1.webp",
-          "ratio": 1.6667
         }
       ]
     },
