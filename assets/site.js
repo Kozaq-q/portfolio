@@ -1,5 +1,5 @@
-import { mountWall, PHONE } from './wall.js?v=11';
-import { FONTS } from './shell.js?v=11';
+import { mountWall, PHONE } from './wall.js?v=12';
+import { FONTS } from './shell.js?v=12';
 
 const doc = document.documentElement;
 const ROOT = doc.dataset.root || '';
@@ -13,6 +13,8 @@ const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '
 let MEDIA = '';
 const src = (p) => (!p ? '' : /^(https?:|blob:|data:)/.test(p) ? p : p.startsWith('r2:') ? MEDIA + p.slice(3) : ROOT + p);
 const projectUrl = (slug) => `${ROOT}work/${slug}/`;
+// hidden projects stay in content but are left out of the index, the homepage and "next project"
+const listed = (site) => site.projects.filter((p) => !p.hidden);
 const kind = (p) => [p.type, p.year].filter(Boolean).join(', ');
 const h = (html) => { const t = document.createElement('template'); t.innerHTML = html.trim(); return t.content.firstElementChild; };
 const posterOf = (m) => (m ? src(m.type === 'video' ? m.poster : m.src) : '');
@@ -97,13 +99,13 @@ function chrome(site) {
 
   const index = h(`
     <div class="sheet index" hidden role="dialog" aria-label="Index">
-      <ol>${site.projects.map((p, i) => `
+      <ol>${listed(site).map((p, i) => `
         <li><a href="${projectUrl(p.slug)}" data-i="${i}">${esc(p.title)}<small>${esc(kind(p))}</small></a></li>`).join('')}
       </ol>
       <div class="preview"></div>
     </div>`);
   const preview = index.querySelector('.preview');
-  const previews = site.projects.map((p) => {
+  const previews = listed(site).map((p) => {
     const m = p.media.find((x) => x.type === 'video') || p.media[0];
     if (!m) return null;
     const f = frame(m, { observe: false });
@@ -177,7 +179,7 @@ function openReel(link) {
 /* ---------- pages ---------- */
 function home(site, main) {
   const cells = (list, sized) => (list || []).map(({ p, m, s, r, br }) => {
-    const pr = site.projects.find((x) => x.slug === p);
+    const pr = site.projects.find((x) => x.slug === p && !x.hidden);
     const media = pr?.media.find((x) => x.id === m);
     return media ? cell(media, pr, true, sized ? { s, r, br } : { r }) : null;
   }).filter(Boolean);
@@ -243,7 +245,10 @@ function project(site, main) {
     mountWall(w, rest.map((m) => cell(m, p, false)));
   }
 
-  const next = site.projects[(i + 1) % site.projects.length];
+  // next visible project after this one (wrapping round); a hidden page still links onward
+  const order = site.projects;
+  let next = null;
+  for (let k = 1; k < order.length && !next; k++) { const q = order[(i + k) % order.length]; if (!q.hidden) next = q; }
   if (next && next !== p) {
     const m = next.media.find((x) => x.type === 'video') || next.media[0];
     const a = h(`<a class="next" href="${projectUrl(next.slug)}"><span class="txt"><b>${esc(next.title)}</b><span>Next project →</span></span></a>`);

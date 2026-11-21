@@ -3,7 +3,7 @@
 // The page content itself is rendered by assets/site.js from content/site.json.
 
 // Bump when assets/*.js or *.css change so browsers fetch the new code instead of a cached copy.
-export const V = '11';
+export const V = '12';
 
 // Typefaces the site can use (Google Fonts). Chosen in Studio → Settings.
 const G = 'https://fonts.googleapis.com/css2?display=swap&family=';
@@ -37,7 +37,7 @@ export function pageShell(site, project) {
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>${esc(title)}</title>${s.hidden !== false ? '\n<meta name="robots" content="noindex, nofollow">' : ''}
+<title>${esc(title)}</title>${s.hidden !== false || project?.hidden ? '\n<meta name="robots" content="noindex, nofollow">' : ''}
 <meta name="description" content="${esc(description).slice(0, 300)}">
 <meta property="og:title" content="${esc(title)}">
 <meta property="og:description" content="${esc(description).slice(0, 300)}">

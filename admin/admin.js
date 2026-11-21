@@ -1,8 +1,8 @@
 // Studio — content editor for the portfolio.
 // Edits content/site.json and media in the GitHub repository through the GitHub API.
 // Nothing is stored on a server: the access token lives only in this browser (localStorage).
-import { allShells, FONTS } from '../assets/shell.js?v=11';
-import { packRows, renderRows, SIZES, SHAPES, PHONE_SIZES } from '../assets/wall.js?v=11';
+import { allShells, FONTS, V as STUDIO_V } from '../assets/shell.js?v=12';
+import { packRows, renderRows, SIZES, SHAPES, PHONE_SIZES } from '../assets/wall.js?v=12';
 
 const CFG_KEY = 'studio.cfg';
 const R2_KEY = 'studio.r2'; // video storage keys (Cloudflare R2) — kept only in this browser
@@ -122,7 +122,17 @@ async function publish() {
     S.site.home = S.site.home.filter((t) => S.site.projects.find((x) => x.slug === t.p)?.media.some((x) => x.id === t.m));
     syncPhone();
     tree.push({ path: 'content/site.json', mode: '100644', type: 'blob', content: JSON.stringify(S.site, null, 2) + '\n' });
-    for (const [path, html] of Object.entries(allShells(S.site))) tree.push({ path, mode: '100644', type: 'blob', content: html });
+    // build the pages with the page template that is in the repository right now, not the copy this
+    // Studio tab loaded earlier — otherwise an open, older Studio would roll the site back to old code
+    let shells = allShells, liveV = STUDIO_V;
+    try {
+      const code = await gh(`/contents/assets/shell.js?ref=${ref.object.sha}`, { raw: true });
+      const url = URL.createObjectURL(new Blob([code], { type: 'text/javascript' }));
+      const mod = await import(url);
+      URL.revokeObjectURL(url);
+      if (mod.allShells) { shells = mod.allShells; liveV = mod.V; }
+    } catch (e) { console.warn('Using built-in page template', e); }
+    for (const [path, html] of Object.entries(shells(S.site))) tree.push({ path, mode: '100644', type: 'blob', content: html });
     const slugs = S.site.projects.map((p) => p.slug);
     for (const s of S.baseSlugs) if (!slugs.includes(s)) tree.push({ path: `work/${s}/index.html`, mode: '100644', type: 'blob', sha: null });
 
@@ -139,7 +149,8 @@ async function publish() {
     S.baseSlugs = slugs;
     S.busy = false;
     status();
-    toast('Published. The live site updates in about a minute.', 5000);
+    if (liveV !== STUDIO_V) toast('Published. Studio has been updated since you opened it — reload this page to get the new version.', 9000);
+    else toast('Published. The live site updates in about a minute.', 5000);
   } catch (e) {
     S.busy = false; status();
     if (e.status === 409 || e.status === 422) toast('The repository changed in the meantime. Reload Studio and try again.', 7000);
@@ -356,7 +367,7 @@ function viewProjects(wrap) {
     <div class="split">
       <div>
         <ul class="list">${ps.map((p, i) => `
-          <li><button class="pick" data-pick="${esc(p.slug)}" aria-current="${p.slug === S.current}">${esc(p.title || 'Untitled')}<small>${esc(p.year)}</small></button>${updown(i, ps.length)}</li>`).join('')}
+          <li class="${p.hidden ? 'is-hidden' : ''}"><button class="pick" data-pick="${esc(p.slug)}" aria-current="${p.slug === S.current}">${esc(p.title || 'Untitled')}<small>${esc(p.year)}</small>${p.hidden ? '<em>hidden</em>' : ''}</button>${updown(i, ps.length)}</li>`).join('')}
         </ul>
         <p><button class="btn" data-add>+ New project</button></p>
         <p class="hint">The order here is the order of the index on the site.</p>
@@ -382,6 +393,8 @@ function editor(box, p) {
   const el = h(`
     <div class="form">
       <h2>${esc(p.title || 'Untitled')}</h2>
+      <label class="hidecheck ${p.hidden ? 'on' : ''}"><input type="checkbox" data-hide ${p.hidden ? 'checked' : ''}>
+        <span><b>Hidden</b> — not shown on the site<small>Leaves the homepage, the index and “next project”. Nothing is deleted: untick to bring it back. The page still opens for anyone who has its direct link.</small></span></label>
       <div class="row">
         <label><span>Title</span><input data-k="title"></label>
         <label><span>Type (small print on the page)</span><input data-k="type" list="types"></label>
@@ -415,6 +428,8 @@ function editor(box, p) {
     </div>`);
 
   bind(el, p, (k) => { if (k === 'title') { $('h2', el).textContent = p.title || 'Untitled'; const b = $(`[data-pick="${CSS.escape(p.slug)}"]`); if (b) b.firstChild.textContent = p.title || 'Untitled'; } });
+
+  $('[data-hide]', el).onchange = (e) => { if (e.target.checked) p.hidden = true; else delete p.hidden; render(); };
 
   const slugIn = $('[data-slug]', el);
   slugIn.onchange = () => {
@@ -561,7 +576,8 @@ function viewHome(wrap) {
     vp = phone ? { vw: 390, vh: 844 } : { vw: Math.max(1024, innerWidth), vh: Math.max(560, innerHeight) };
     const seam = phone ? 2 : 3;
     k = screen.clientWidth / vp.vw;
-    const cells = list.map(tileFor);
+    // shots of hidden projects keep their place but are left out, as on the site
+    const cells = list.filter((t) => !S.site.projects.find((x) => x.slug === t.p)?.hidden).map(tileFor);
     cells.forEach((c, i) => {
       c.el.classList.toggle('sel', c.t === S.homeSel);
       $('.tt', c.el).textContent = `${i + 1}  ${c.p.title}`;
