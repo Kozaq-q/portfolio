@@ -24,7 +24,7 @@
   },
   "projects": [
     {
-      "slug": "project",
+      "slug": "profundum",
       "title": "Profundum",
       "type": "Fashion film",
       "year": 2026,
@@ -385,16 +385,16 @@
   ],
   "home": [
     {
-      "p": "project",
+      "p": "profundum",
       "m": "mwqj61flt1vj",
       "s": "l"
     },
     {
-      "p": "project",
+      "p": "profundum",
       "m": "mwqj65mtz2cf"
     },
     {
-      "p": "project",
+      "p": "profundum",
       "m": "mwqj68j7q4te",
       "s": "s"
     },
@@ -465,17 +465,17 @@
   ],
   "homePhone": [
     {
-      "p": "project",
+      "p": "profundum",
       "m": "mwqj61flt1vj",
       "s": "m"
     },
     {
-      "p": "project",
+      "p": "profundum",
       "m": "mwqj65mtz2cf",
       "s": "m"
     },
     {
-      "p": "project",
+      "p": "profundum",
       "m": "mwqj68j7q4te"
     },
     {
