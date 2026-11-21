@@ -231,21 +231,52 @@
       "w": 34
     },
     {
-      "p": "profundum",
-      "m": "mwqj68j7q4te",
-      "w": 31,
-      "fy": 85,
-      "fx": 50
-    },
-    {
       "p": "gooddog",
       "m": "mwqt6wwrv0yg",
-      "w": 37
+      "w": 34,
+      "crop": [
+        0,
+        0.0448,
+        1,
+        0.9552
+      ]
+    },
+    {
+      "p": "profundum",
+      "m": "mwqj68j7q4te",
+      "w": 30,
+      "crop": [
+        0.1107,
+        0,
+        0.8893,
+        0.9879
+      ]
     },
     {
       "p": "metro4x",
       "m": "mwqk67l9gx4d",
       "w": 31
+    },
+    {
+      "p": "fromtheshore",
+      "m": "mwqjvxxa66qk",
+      "w": 34,
+      "crop": [
+        0,
+        0.3045,
+        1,
+        0.5466
+      ]
+    },
+    {
+      "p": "gooddog",
+      "m": "mwqt6x3k81qz",
+      "w": 45
+    },
+    {
+      "p": "metro4x",
+      "m": "mwqk67hes4yv",
+      "w": 55
     },
     {
       "p": "profundum",
@@ -254,22 +285,7 @@
     },
     {
       "p": "fromtheshore",
-      "m": "mwqjvxxa66qk",
-      "w": 30
-    },
-    {
-      "p": "fromtheshore",
       "m": "mwqjvy1923ti",
-      "w": 34
-    },
-    {
-      "p": "metro4x",
-      "m": "mwqk67hes4yv",
-      "w": 31
-    },
-    {
-      "p": "gooddog",
-      "m": "mwqt6x3k81qz",
       "w": 34
     },
     {
