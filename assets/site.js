@@ -1,5 +1,5 @@
-import { mountWall, PHONE } from './wall.js?v=13';
-import { FONTS } from './shell.js?v=13';
+import { mountWall, PHONE } from './wall.js?v=14';
+import { FONTS } from './shell.js?v=14';
 
 const doc = document.documentElement;
 const ROOT = doc.dataset.root || '';
@@ -190,7 +190,7 @@ function home(site, main) {
   const w = document.createElement('div');
   w.className = 'wall';
   main.append(w);
-  mountWall(w, items);
+  mountWall(w, items, { grid: true });
 
   const s = site.settings;
   main.append(h(`

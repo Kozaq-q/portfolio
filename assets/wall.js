@@ -1,35 +1,76 @@
-// Wall layout: justified rows that fill the width exactly.
-// Shared by the public site (assets/site.js) and the Studio preview (admin/admin.js),
+// Wall layouts, shared by the public site (assets/site.js) and the Studio preview (admin/admin.js),
 // so what you arrange in Studio is exactly what visitors see.
 //
-// Each item: { ratio, size, br }
-//   size: 'xs' | 's' | 'm' (default) | 'l' | 'xl' (a row of its own, full width)
-//   br:   true = this tile starts a new row
+// Homepage — packGrid: every tile has a WIDTH (a share of the screen width). Tiles fill rows left
+// to right; a row's height comes from its widest tile, which always keeps its full frame (the others
+// are trimmed top/bottom to match). Changing a tile's width changes that tile, immediately.
+// Project pages — packRows: plain justified rows, no settings.
+//
+// Each item: { ratio, size, br }   br: true = this tile starts a new row
 
-export const SIZES = { xs: 'XS', s: 'S', m: 'M', l: 'L', xl: 'Full' };
+// desktop widths ('' = automatic, by the shot's shape)
+export const SIZES = [['', 'Auto'], ['q', '¼'], ['t', '⅓'], ['h', '½'], ['tt', '⅔'], ['tq', '¾'], ['f', 'Full']];
+const DESK = { q: 1 / 4, t: 1 / 3, h: 1 / 2, tt: 2 / 3, tq: 3 / 4, f: 1 };
+// sizes saved by earlier versions of Studio
+const LEGACY = { xs: 'q', s: 't', m: '', l: 'f', xl: 'f' };
+export const deskSize = (s) => (s in DESK ? s : LEGACY[s] ?? '');
 // crop a tile to a fixed shape on the homepage ('' = the shot's own shape)
 export const SHAPES = [['', 'Original'], ['2.39', '2.39 : 1'], ['1.78', '16 : 9'], ['1.33', '4 : 3'], ['1', '1 : 1'], ['0.8', '4 : 5']];
-const FACTOR = { xs: 0.42, s: 0.66, m: 1, l: 1.5 };
 
-// Phone: sizes are shares of the row width, so each step is clearly different.
-// (no size = automatic: landscape shots full width, vertical ones two in a row)
+// phone widths (no size = automatic: landscape shots full width, vertical ones two in a row)
 export const PHONE_SIZES = [['', 'Auto'], ['s', '⅓'], ['m', '½'], ['l', 'Full']];
 const SHARE = { s: 1 / 3, m: 1 / 2, l: 1 };
 
 export const PHONE = 860; // widths at or below this use the phone layout
 
+// homepage grid
+export function packGrid(items, { W, seam, vw, vh }) {
+  const phone = vw <= PHONE;
+  const explicit = (c) => (phone ? SHARE[c.size] : DESK[deskSize(c.size)]);
+  const auto = (c) => (phone ? (c.ratio < 1 ? 1 / 2 : 1) : c.ratio < 0.9 ? 1 / 4 : c.ratio < 1.3 ? 1 / 3 : 1 / 2);
+  const cap = vh * (phone ? 0.8 : 0.92);
+
+  const rows = [];
+  let row = [], sum = 0;
+  const close = () => { if (row.length) rows.push(row); row = []; sum = 0; };
+  for (const c of items) {
+    const fixed = explicit(c);
+    const sh = fixed || auto(c);
+    if (row.length && (c.br || sum + sh > 1.001)) close();
+    row.push({ c, sh, fixed: !!fixed });
+    sum += sh;
+    if (sum >= 0.999) close();
+  }
+  close();
+
+  const unit = W + seam; // one full row, counting one trailing seam, so columns line up between rows
+  return rows.map((r) => {
+    let total = r.reduce((a, x) => a + x.sh, 0);
+    // a short row: automatic tiles grow to close it; tiles with a set width keep it (row is centred)
+    const autoSum = r.reduce((a, x) => a + (x.fixed ? 0 : x.sh), 0);
+    if (total < 0.999 && autoSum > 0) {
+      const k = (autoSum + 1 - total) / autoSum;
+      r.forEach((x) => { if (!x.fixed) x.sh *= k; });
+      total = 1;
+    }
+    let widths = r.map((x) => x.sh * unit - seam);
+    // the widest tile sets the height and keeps its whole frame
+    let a = 0;
+    widths.forEach((w, i) => { if (w > widths[a] + 0.5) a = i; });
+    const natural = widths[a] / r[a].c.ratio;
+    const height = Math.min(natural, cap);
+    if (height < natural) widths = widths.map((w) => w * height / natural); // very tall: shrink the row, keep the frame
+    return { items: r.map((x) => x.c), height, widths, full: total >= 0.999 && height === natural };
+  });
+}
+
 // W: inner width, seam: gap px, vw/vh: viewport size (decides phone vs desktop and caps height)
 export function packRows(items, { W, seam, vw, vh }) {
   const phone = vw <= PHONE;
-  if (phone) return packPhone(items, { W, seam, vh });
   const base = phone ? W * 0.75 : Math.max(240, Math.min(vh * 0.46, W * 0.3));
   const cap = vh * (phone ? 0.8 : 0.92);
   const fits = (row) => (W - seam * (row.length - 1)) / row.reduce((a, c) => a + c.ratio, 0);
-  const target = (row) => {
-    const f = row.map((c) => FACTOR[c.size] || 1);
-    const hi = Math.max(...f), lo = Math.min(...f);
-    return base * (hi > 1 ? hi : lo);
-  };
+  const target = () => base;
   const off = (h, t) => Math.abs(Math.log(Math.min(h, cap) / t));
 
   const rows = [];
@@ -44,11 +85,6 @@ export function packRows(items, { W, seam, vw, vh }) {
 
   let row = [];
   for (const c of items) {
-    if (c.size === 'xl') {
-      flush(row); row = [];
-      const r = [c]; r.solo = true; rows.push(r);
-      continue;
-    }
     if (c.br && row.length) { flush(row); row = []; }
     const next = [...row, c];
     if (fits(next) <= target(next)) {
@@ -66,49 +102,29 @@ export function packRows(items, { W, seam, vw, vh }) {
   });
 }
 
-function packPhone(items, { W, seam, vh }) {
-  const fits = (row) => (W - seam * (row.length - 1)) / row.reduce((a, c) => a + c.ratio, 0);
-  const share = (c) => SHARE[c.size] || (c.ratio < 1 ? 1 / 2 : 1);
-  const rows = [];
-  let row = [], sum = 0;
-  const close = () => { if (row.length) rows.push({ row, sum }); row = []; sum = 0; };
-  for (const c of items) {
-    const sh = share(c);
-    if (row.length && (c.br || sum + sh > 1.01)) close();
-    row.push(c); sum += sh;
-    if (sum >= 0.99) close();
-  }
-  close();
-  const cap = vh * 0.8;
-  // a row that isn't full keeps its tiles at their chosen share instead of stretching them
-  return rows.map(({ row: r, sum: f }) => {
-    const natural = fits(r);
-    const full = f >= 0.99;
-    const height = Math.min(full ? natural : (W * Math.min(1, f) - seam * (r.length - 1)) / r.reduce((a, c) => a + c.ratio, 0), cap);
-    return { items: r, height, stretch: full && height === natural };
-  });
-}
-
 // Puts packed rows into a container. k scales everything (Studio shows a smaller copy of the page).
 export function renderRows(el, rows, k = 1) {
   el.replaceChildren();
   for (const r of rows) {
     const div = document.createElement('div');
     div.className = 'row';
-    if (!r.stretch) div.style.justifyContent = 'center';
+    if (!r.stretch && !r.full) div.style.justifyContent = 'center';
     div.style.height = `${r.height * k}px`;
-    for (const c of r.items) {
-      c.el.style.flex = r.stretch ? `${c.ratio} 1 0` : 'none';
-      c.el.style.width = r.stretch ? '' : `${r.height * c.ratio * k}px`;
+    r.items.forEach((c, i) => {
+      if (r.widths) { c.el.style.flex = 'none'; c.el.style.width = `${r.widths[i] * k}px`; }
+      else {
+        c.el.style.flex = r.stretch ? `${c.ratio} 1 0` : 'none';
+        c.el.style.width = r.stretch ? '' : `${r.height * c.ratio * k}px`;
+      }
       div.append(c.el);
-    }
+    });
     el.append(div);
   }
 }
 
 // Lays rows of { el, ratio, size, br } into a container and keeps them fitted on resize.
 // cells can also be a function (viewportWidth) => cells, e.g. a separate list for phones.
-export function mountWall(el, cells) {
+export function mountWall(el, cells, { grid = false } = {}) {
   let lastKey = '', lastList = null;
   const layout = () => {
     const seam = parseFloat(getComputedStyle(el).rowGap) || 3;
@@ -119,10 +135,10 @@ export function mountWall(el, cells) {
     const key = `${Math.round(W)}x${Math.round(vp.vh / 40)}x${list.length}${list === lastList}`; // ignore tiny height jitter (mobile URL bar)
     if ((key === lastKey && list === lastList) || W <= 0) return;
     lastKey = key; lastList = list;
-    renderRows(el, packRows(list, { W, seam, ...vp }));
+    renderRows(el, (grid ? packGrid : packRows)(list, { W, seam, ...vp }));
   };
   layout();
-  const ro = 'ResizeObserver' in window ? new ResizeObserver(() => requestAnimationFrame(layout)) : null;
+  const ro = 'ResizeObserver' in window ? new ResizeObserver(() => { requestAnimationFrame(layout); setTimeout(layout, 60); }) : null;
   if (ro) ro.observe(el); else addEventListener('resize', layout);
   return { layout: () => { lastKey = ''; layout(); }, stop: () => ro?.disconnect() };
 }

@@ -1,8 +1,8 @@
 // Studio — content editor for the portfolio.
 // Edits content/site.json and media in the GitHub repository through the GitHub API.
 // Nothing is stored on a server: the access token lives only in this browser (localStorage).
-import { allShells, FONTS, V as STUDIO_V } from '../assets/shell.js?v=13';
-import { packRows, renderRows, SIZES, SHAPES, PHONE_SIZES } from '../assets/wall.js?v=13';
+import { allShells, FONTS, V as STUDIO_V } from '../assets/shell.js?v=14';
+import { packGrid, renderRows, SIZES, SHAPES, PHONE_SIZES, deskSize } from '../assets/wall.js?v=14';
 
 const CFG_KEY = 'studio.cfg';
 const R2_KEY = 'studio.r2'; // video storage keys (Cloudflare R2) — kept only in this browser
@@ -500,6 +500,9 @@ function syncPhone() {
   S.site.homePhone = S.site.homePhone.filter((x) => S.site.home.some((t) => t.p === x.p && t.m === x.m));
 }
 
+// next frame, or a short timer if frames are paused (background tab)
+const soon = (fn) => { let done = false; const run = () => { if (!done) { done = true; fn(); } }; requestAnimationFrame(run); setTimeout(run, 40); };
+
 function viewHome(wrap) {
   wrap.classList.add('wide');
   const home = S.site.home = S.site.home.filter((t) => S.site.projects.find((x) => x.slug === t.p)?.media.some((x) => x.id === t.m));
@@ -514,7 +517,7 @@ function viewHome(wrap) {
   const el = h(`
     <div>
       <h2>Homepage</h2>
-      <p class="hint" style="margin-bottom:18px">A smaller copy of your front page, in its real proportions. Drag tiles to reorder them. Click a tile to set its size and shape.
+      <p class="hint" style="margin-bottom:18px">A smaller copy of your front page, in its real proportions. Drag tiles to reorder them. Click a tile to set its width and shape.
         Add or remove shots with the “Homepage” checkbox inside each project.</p>
       <div class="hometools">
         <span class="seg" role="group" aria-label="Preview">
@@ -563,7 +566,7 @@ function viewHome(wrap) {
     const c = {
       el: node, t, p, m,
       get ratio() { return +t.r || m.ratio || 16 / 9; },
-      get size() { return sized ? t.s || (phone ? '' : 'm') : ''; },
+      get size() { return sized ? t.s || '' : ''; },
       get br() { return sized && !!t.br; },
     };
     dragable(c);
@@ -583,7 +586,7 @@ function viewHome(wrap) {
       $('.tt', c.el).textContent = `${i + 1}  ${c.p.title}`;
     });
     hw.style.padding = hw.style.gap = `${seam * k}px`;
-    renderRows(hw, packRows(cells, { W: vp.vw - seam * 2, seam, ...vp }), k);
+    renderRows(hw, packGrid(cells, { W: vp.vw - seam * 2, seam, ...vp }), k);
     // the header, footer and the fold, scaled like the page
     const pad = (phone ? 16 : 32) * k;
     sbar.style.cssText = `padding:${(phone ? 16 : 22) * k}px ${pad}px;font-size:${(phone ? 14 : 15) * k}px`;
@@ -591,28 +594,39 @@ function viewHome(wrap) {
     fold.style.top = `${vp.vh * k}px`;
     fold.hidden = hw.offsetHeight < vp.vh * k;
     $('[data-scale]', el).textContent = `Screen ${vp.vw} × ${vp.vh} shown at ${Math.round(k * 100)}%`;
+    measure();
   };
 
-  // animate tiles from where they were to where they land
+  // where every tile sits in the finished layout (page coordinates) — used to find the drop spot,
+  // so tiles that are still sliding into place never confuse the drag
+  let slots = new Map();
+  const measure = () => {
+    slots = new Map([...tiles.values()].map((c) => {
+      const r = c.el.getBoundingClientRect();
+      return [c.el, { l: r.left + scrollX, t: r.top + scrollY, w: r.width, h: r.height }];
+    }));
+  };
+  // animate tiles from where they are now to where they land
   const flip = (fn) => {
     const before = new Map([...tiles.values()].map((c) => [c.el, c.el.getBoundingClientRect()]));
+    for (const c of tiles.values()) c.el.getAnimations().forEach((x) => x.cancel());
     fn();
     for (const c of tiles.values()) {
       const a = before.get(c.el), b = c.el.getBoundingClientRect();
-      if (!a || !b.width || c.el.classList.contains('lifted')) continue;
+      if (!a || !a.width || !b.width || c.el.classList.contains('lifted')) continue;
       const dx = a.left - b.left, dy = a.top - b.top, sx = a.width / b.width, sy = a.height / b.height;
       if (Math.abs(dx) < 1 && Math.abs(dy) < 1 && Math.abs(sx - 1) < .01 && Math.abs(sy - 1) < .01) continue;
       c.el.animate([{ transformOrigin: '0 0', transform: `translate(${dx}px,${dy}px) scale(${sx},${sy})` }, { transformOrigin: '0 0', transform: 'none' }],
-        { duration: 260, easing: 'cubic-bezier(.2,.7,.2,1)' });
+        { duration: 220, easing: 'cubic-bezier(.2,.7,.2,1)' });
     }
   };
   const update = () => { flip(lay); inspector(); status(); };
-  const moveTo = (t, to) => {
+  const moveTo = (t, to, quiet = false) => {
     const from = list.indexOf(t);
     to = Math.max(0, Math.min(list.length - 1, to));
     if (from === to) return;
     list.splice(from, 1); list.splice(to, 0, t);
-    update();
+    if (quiet) { flip(lay); status(); } else update();
   };
 
   // drag with the mouse or a finger; the other tiles make room as you go
@@ -623,13 +637,35 @@ function viewHome(wrap) {
       if (!editable) { S.homeSel = c.t; lay(); inspector(); return; }
       const r0 = node.getBoundingClientRect();
       const off = { x: e.clientX - r0.left, y: e.clientY - r0.top };
-      let ghost = null, last = '';
+      let ghost = null, last = '', raf = 0, ev = null, calmUntil = 0;
       node.setPointerCapture(e.pointerId);
-      const onMove = (ev) => {
+      const tick = () => {
+        raf = 0;
+        if (!ev || !ghost) return;
+        if (ev.clientY < 70) scrollBy(0, -14); else if (ev.clientY > innerHeight - 70) scrollBy(0, 14);
+        if (performance.now() < calmUntil) return;
+        const px = ev.clientX + scrollX, py = ev.clientY + scrollY;
+        let over = null;
+        for (const [el, b] of slots) if (el !== node && px >= b.l && px < b.l + b.w && py >= b.t && py < b.t + b.h) { over = el; break; }
+        if (!over) return;
+        const target = [...tiles.values()].find((x) => x.el === over);
+        const b = slots.get(over);
+        const after = px > b.l + b.w / 2;
+        const key = `${list.indexOf(target.t)}${after}`;
+        if (key === last) return;
+        last = key;
+        let to = list.indexOf(target.t) + (after ? 1 : 0);
+        if (list.indexOf(c.t) < to) to -= 1;
+        if (to === list.indexOf(c.t)) return;
+        moveTo(c.t, to, true);
+        calmUntil = performance.now() + 160; // let the tiles settle before the next move
+      };
+      const onMove = (e2) => {
+        ev = e2;
         if (!ghost) {
-          if (Math.hypot(ev.clientX - e.clientX, ev.clientY - e.clientY) < 6) return;
+          if (Math.hypot(e2.clientX - e.clientX, e2.clientY - e.clientY) < 6) return;
           const r = node.getBoundingClientRect();
-          const w = Math.min(r.width, 260), hgt = w * r.height / r.width;
+          const w = Math.min(r.width, 240), hgt = w * r.height / r.width;
           off.x *= w / r.width; off.y *= w / r.width;
           ghost = node.cloneNode(true);
           ghost.className = 'ht ghost';
@@ -637,31 +673,22 @@ function viewHome(wrap) {
           document.body.append(ghost);
           node.classList.add('lifted');
           document.body.classList.add('dragging');
+          measure();
         }
-        ghost.style.transform = `translate(${ev.clientX - off.x}px, ${ev.clientY - off.y}px) rotate(-1.5deg)`;
-        if (ev.clientY < 70) scrollBy(0, -14); else if (ev.clientY > innerHeight - 70) scrollBy(0, 14);
-        const over = document.elementsFromPoint(ev.clientX, ev.clientY).find((x) => x.classList?.contains('ht') && !x.classList.contains('ghost'));
-        if (!over || over === node) return;
-        const target = [...tiles.values()].find((x) => x.el === over);
-        const rr = over.getBoundingClientRect();
-        const after = ev.clientX > rr.left + rr.width / 2;
-        const key = `${list.indexOf(target.t)}${after}`;
-        if (key === last) return;
-        last = key;
-        let to = list.indexOf(target.t) + (after ? 1 : 0);
-        if (list.indexOf(c.t) < to) to -= 1;
-        moveTo(c.t, to);
+        ghost.style.transform = `translate3d(${e2.clientX - off.x}px, ${e2.clientY - off.y}px, 0) rotate(-1.5deg)`;
+        if (!raf) { raf = 1; soon(tick); }
       };
       const onUp = () => {
         node.removeEventListener('pointermove', onMove);
         node.removeEventListener('pointerup', onUp);
         node.removeEventListener('pointercancel', onUp);
+        ev = null;
         if (ghost) {
           const g = ghost.getBoundingClientRect();
           node.classList.remove('lifted');
           document.body.classList.remove('dragging');
           const b = node.getBoundingClientRect();
-          node.animate([{ transformOrigin: '0 0', transform: `translate(${g.left - b.left}px,${g.top - b.top}px) scale(${g.width / b.width})` }, { transformOrigin: '0 0', transform: 'none' }], { duration: 240, easing: 'cubic-bezier(.2,.7,.2,1)' });
+          node.animate([{ transformOrigin: '0 0', transform: `translate(${g.left - b.left}px,${g.top - b.top}px) scale(${g.width / b.width})` }, { transformOrigin: '0 0', transform: 'none' }], { duration: 220, easing: 'cubic-bezier(.2,.7,.2,1)' });
           ghost.remove();
         }
         S.homeSel = c.t;
@@ -696,11 +723,11 @@ function viewHome(wrap) {
       list.push(n); S.homeSel = n; update();
     }));
     if (!t) {
-      insp.innerHTML = `<p class="hint" style="margin:0">Click a tile to change its size and shape.</p>
+      insp.innerHTML = `<p class="hint" style="margin:0">Click a tile to change its width and shape.</p>
         <p class="hint">Drag tiles to put them in order — the others make room as you move.</p>
         <p class="hint">${phone
           ? 'On phones a size is a share of the screen width: ⅓, ½ or Full. Shots you hide here stay on the desktop.'
-          : 'Sizes change how tall a row is, so neighbours adapt too. <b>Full</b> gives a shot the whole width.'}</p>${tray}`;
+          : 'Each shot has a width: ¼, ⅓, ½, ⅔, ¾ or Full. Shots fill a row left to right until it is full. <b>Auto</b> shots stretch to close a row; shots with a set width keep it exactly.'}</p>${tray}`;
       bindTray();
       return;
     }
@@ -708,8 +735,9 @@ function viewHome(wrap) {
     insp.innerHTML = `
       <div class="ithumb" style="aspect-ratio:${c.ratio}"><img src="${esc(mediaUrl(c.m.type === 'video' ? c.m.poster : c.m.src))}" alt=""></div>
       <p class="ititle"><b>${esc(c.p.title)}</b><span>${i + 1} of ${list.length}${c.m.type === 'video' ? ' · clip' : ' · still'}</span></p>
-      <h3>${phone ? 'Size on phones' : 'Size'}</h3>
-      <div class="seg full">${(phone ? PHONE_SIZES : Object.entries(SIZES)).map(([key, l]) => `<button data-s="${key}" aria-pressed="${(t.s || (phone ? '' : 'm')) === key}">${l}</button>`).join('')}</div>
+      <h3>${phone ? 'Width on phones' : 'Width'}</h3>
+      <div class="seg full sizes">${(phone ? PHONE_SIZES : SIZES).map(([key, l]) => `<button data-s="${key}" aria-pressed="${(phone ? t.s || '' : deskSize(t.s || '')) === key}" title="${key ? `${l} of the screen width` : 'Automatic, by the shot’s shape'}">${l}</button>`).join('')}</div>
+      <p class="hint" style="margin-top:6px">${phone ? 'Share of the screen width.' : 'Share of the screen width. The widest shot in a row keeps its full frame; the others are trimmed top and bottom to match its height.'}</p>
       <h3>Shape on the homepage</h3>
       <div class="shapes">${SHAPES.map(([key, l]) => `<button data-r="${key}" aria-pressed="${(t.r || '') === key}"><i style="aspect-ratio:${key || c.m.ratio || 1.78}"></i>${l}</button>`).join('')}</div>
       <label class="check"><input type="checkbox" data-br ${t.br ? 'checked' : ''}> Start a new row with this shot</label>
@@ -719,7 +747,7 @@ function viewHome(wrap) {
         <button class="btn quiet" data-desel>Done</button>
         <button class="btn quiet danger" data-rm>${phone ? 'Hide on phones' : 'Remove from homepage'}</button></p>${tray}`;
     bindTray();
-    insp.querySelectorAll('[data-s]').forEach((b) => (b.onclick = () => { if (b.dataset.s === (phone ? '' : 'm')) delete t.s; else t.s = b.dataset.s; update(); }));
+    insp.querySelectorAll('[data-s]').forEach((b) => (b.onclick = () => { if (!b.dataset.s) delete t.s; else t.s = b.dataset.s; update(); }));
     insp.querySelectorAll('[data-r]').forEach((b) => (b.onclick = () => { if (!b.dataset.r) delete t.r; else t.r = b.dataset.r; update(); }));
     $('[data-br]', insp).onchange = (e) => { if (e.target.checked) t.br = true; else delete t.br; update(); };
     insp.querySelectorAll('[data-mv]').forEach((b) => (b.onclick = () => {
@@ -742,7 +770,7 @@ function viewHome(wrap) {
     if (e.key === 'Escape') { S.homeSel = null; lay(); inspector(); }
   };
   addEventListener('keydown', S.homeKeys);
-  const ro = new ResizeObserver(() => requestAnimationFrame(lay));
+  const ro = new ResizeObserver(() => soon(lay));
   ro.observe(screen);
   S.homeWall = { stop: () => { ro.disconnect(); removeEventListener('keydown', S.homeKeys); } };
 }
