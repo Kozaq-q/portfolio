@@ -94,6 +94,8 @@ a.cell:hover .label, a.cell:focus-visible .label { opacity: 1; transform: none; 
 @media (hover: none) { .label { opacity: 1; transform: none; } }
 /* narrow tiles: title only */
 @container (max-width: 230px) { .label i { display: none; } .label { left: 10px; right: 10px; bottom: 9px; } }
+/* very small tiles (phones showing the desktop layout): no caption */
+@container (max-width: 150px) { .label { display: none; } }
 
 .foot {
   display: flex; justify-content: space-between; align-items: end; gap: 24px;

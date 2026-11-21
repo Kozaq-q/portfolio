@@ -1,5 +1,5 @@
-import { mountWall, PHONE, cropRect, croppedRatio, applyCrop } from './wall.js?v=19';
-import { FONTS } from './shell.js?v=19';
+import { mountWall, PHONE, cropRect, croppedRatio, applyCrop } from './wall.js?v=20';
+import { FONTS } from './shell.js?v=20';
 
 const doc = document.documentElement;
 const ROOT = doc.dataset.root || '';
@@ -190,7 +190,12 @@ function home(site, main) {
   const desk = cells(site.home, true);
   // phones get their own order and sizes when set up in Studio, otherwise the desktop order with automatic sizes
   let phone = null;
-  const items = (vw) => vw <= PHONE ? (phone ||= site.homePhone ? cells(site.homePhone, true) : cells(site.home, false)) : desk;
+  // phones: their own layout if you made one, otherwise the desktop layout scaled down
+  const items = (vw) => {
+    if (vw > PHONE) return desk;
+    if (!phone) { phone = site.homePhone ? cells(site.homePhone, true) : cells(site.home, true); phone.mirror = !site.homePhone; }
+    return phone;
+  };
   const w = document.createElement('div');
   w.className = 'wall';
   main.append(w);

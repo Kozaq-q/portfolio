@@ -1,8 +1,8 @@
 // Studio — content editor for the portfolio.
 // Edits content/site.json and media in the GitHub repository through the GitHub API.
 // Nothing is stored on a server: the access token lives only in this browser (localStorage).
-import { allShells, FONTS, V as STUDIO_V } from '../assets/shell.js?v=19';
-import { packGrid, packCanvas, renderGrid, REF, SHAPES, PRESETS, sizePct, cropRect, croppedRatio, applyCrop } from '../assets/wall.js?v=19';
+import { allShells, FONTS, V as STUDIO_V } from '../assets/shell.js?v=20';
+import { packGrid, packCanvas, packMirror, renderGrid, REF, SHAPES, PRESETS, sizePct, cropRect, croppedRatio, applyCrop } from '../assets/wall.js?v=20';
 
 const CFG_KEY = 'studio.cfg';
 const R2_KEY = 'studio.r2'; // video storage keys (Cloudflare R2) — kept only in this browser
@@ -513,7 +513,7 @@ function viewHome(wrap) {
   // what this view edits: the desktop list, the phone's own list, or (phone without its own list) a read-only copy
   const list = phone && own ? S.site.homePhone : home;
   const editable = !phone || own;
-  const sized = editable;
+  const sized = true; // a phone without its own layout mirrors the desktop one, sizes and all
   const el = h(`
     <div>
       <h2>Homepage</h2>
@@ -575,7 +575,7 @@ function viewHome(wrap) {
   const makeOwn = () => { S.site.homePhone = home.map((t) => ({ p: t.p, m: t.m, ...(t.r ? { r: t.r } : {}), ...(t.fx != null ? { fx: t.fx, fy: t.fy } : {}), ...(t.crop ? { crop: [...t.crop] } : {}) })); S.homeSel = null; render(); toast('The phone now has its own order and sizes.'); };
   const ownBtn = $('[data-own]', el); if (ownBtn) ownBtn.onclick = makeOwn;
   const unown = $('[data-unown]', el);
-  if (unown) unown.onclick = () => { if (!confirm('Drop the phone layout? Phones will follow the desktop order again, with automatic sizes.')) return; delete S.site.homePhone; S.homeSel = null; render(); };
+  if (unown) unown.onclick = () => { if (!confirm('Drop the phone layout? Phones will show the desktop layout again, scaled down.')) return; delete S.site.homePhone; S.homeSel = null; render(); };
   if (!home.length) return;
 
   const screen = $('.screen', el), hw = $('.hw', el), insp = $('.insp', el), fold = $('.fold', el), sbar = $('.sbar', el), sfoot = $('.sfoot', el);
@@ -620,7 +620,8 @@ function viewHome(wrap) {
     hw.style.padding = hw.style.gap = `${seam * k}px`;
     const opts = { W: vp.vw - seam * 2, seam, ...vp };
     lastU = opts.W + seam;
-    lastGrid = canvasOn() ? packCanvas(cells, opts, fixed) : packGrid(cells, opts);
+    lastGrid = phone && !own ? packMirror(cells, opts, !!S.site.homeCanvas)
+      : canvasOn() && !phone ? packCanvas(cells, opts, fixed) : packGrid(cells, opts);
     renderGrid(hw, lastGrid, seam, k);
     // the header, footer and the fold, scaled like the page
     const pad = (phone ? 16 : 32) * k;
@@ -858,8 +859,8 @@ function viewHome(wrap) {
   function inspector() {
     const t = S.homeSel;
     if (!editable) {
-      insp.innerHTML = `<p style="margin:0">On phones the homepage follows the desktop order, with sizes picked automatically.</p>
-        <p class="hint">Make a separate phone layout to choose a different order, sizes and shots for phones. The desktop stays as it is.</p>
+      insp.innerHTML = `<p style="margin:0">Phones show your desktop layout, scaled down to the phone’s width — same places and sizes, just smaller.</p>
+        <p class="hint">Prefer bigger shots on phones? Make a separate phone layout and arrange it just for phones. The desktop stays as it is.</p>
         <p><button class="btn primary" data-own2>Make a separate phone layout</button></p>`;
       $('[data-own2]', insp).onclick = makeOwn;
       return;

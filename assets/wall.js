@@ -142,6 +142,15 @@ export function settle(boxes, fixed, seam, W) {
   return { height: boxes.reduce((m, b) => Math.max(m, b.y + b.h), 0), boxes };
 }
 
+// Phones without their own layout: the desktop layout, scaled down to the phone's width —
+// same places, same sizes relative to the page, only the seams stay a real seam wide.
+export function packMirror(items, { W, seam }, canvas = false) {
+  if (canvas) return packCanvas(items, { W, seam, vw: REF.vw, vh: REF.vh });
+  const s = W / REF.W;
+  const g = packGrid(items, { W: REF.W, seam: seam / s, vw: REF.vw, vh: REF.vh });
+  return { height: g.height * s, boxes: g.boxes.map((b) => ({ ...b, x: b.x * s, y: b.y * s, w: b.w * s, h: b.h * s })) };
+}
+
 // Places a packGrid result. pad = gap around the wall; k scales everything (Studio preview).
 export function renderGrid(el, grid, seam, k = 1) {
   el.style.position = 'relative';
@@ -234,7 +243,8 @@ export function mountWall(el, cells, { grid = false, canvas = false } = {}) {
     const key = `${Math.round(W)}x${Math.round(vp.vh / 40)}x${list.length}${list === lastList}`; // ignore tiny height jitter (mobile URL bar)
     if ((key === lastKey && list === lastList) || W <= 0) return;
     lastKey = key; lastList = list;
-    if (grid) renderGrid(el, (canvas ? packCanvas : packGrid)(list, { W, seam, ...vp }), seam);
+    const pack = list.mirror && vp.vw <= PHONE ? (l, o) => packMirror(l, o, canvas) : canvas ? packCanvas : packGrid;
+    if (grid) renderGrid(el, pack(list, { W, seam, ...vp }), seam);
     else renderRows(el, packRows(list, { W, seam, ...vp }));
   };
   layout();
