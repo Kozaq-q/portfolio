@@ -1,5 +1,5 @@
-import { mountWall, PHONE, cropRect, croppedRatio, applyCrop } from './wall.js?v=24';
-import { FONTS } from './shell.js?v=24';
+import { mountWall, PHONE, cropRect, croppedRatio, applyCrop } from './wall.js?v=25';
+import { FONTS } from './shell.js?v=25';
 
 const doc = document.documentElement;
 const ROOT = doc.dataset.root || '';
@@ -245,9 +245,9 @@ function project(site, main) {
     </section>`));
 
   if (p.film) {
-    const btn = h(`<button class="film" aria-label="Watch ${esc(p.title)}">
+    const btn = h(`<button class="film facade" aria-label="Watch ${esc(p.title)}">
         ${first ? `<img src="${esc(posterOf(first))}" alt="" class="ready">` : ''}
-        <span class="play">Watch the film →</span></button>`);
+        <span class="play">Watch here</span></button>`);
     btn.onclick = () => btn.replaceWith(h(`<div class="film"><iframe src="${esc(embedUrl(p.film))}" allow="autoplay; fullscreen; picture-in-picture" allowfullscreen></iframe></div>`));
     main.append(btn);
   }

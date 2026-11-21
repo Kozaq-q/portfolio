@@ -3,7 +3,7 @@
 // The page content itself is rendered by assets/site.js from content/site.json.
 
 // Bump when assets/*.js or *.css change so browsers fetch the new code instead of a cached copy.
-export const V = '24';
+export const V = '25';
 
 // Typefaces the site can use (Google Fonts). Chosen in Studio → Settings.
 const G = 'https://fonts.googleapis.com/css2?display=swap&family=';
