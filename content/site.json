@@ -5,7 +5,7 @@
     "email": "contact@pawelkozak.net",
     "instagram": "https://www.instagram.com/kozaq__/",
     "showreel": "",
-    "bio": "Cinematographer based in Warsaw\nK.Kieślowski film school\nhttps://filmpolski.pl/fp/index.php?osoba=11150985",
+    "bio": "Cinematographer based in Warsaw\nK.Kieślowski film school\n",
     "description": "Cinematographer",
     "siteUrl": "https://pawelkozak.net",
     "theme": "light",
@@ -14,13 +14,14 @@
       "name": "portfolio",
       "branch": "main"
     },
-    "font": "general",
+    "font": "switzer",
     "portrait": {
       "src": "media/about/mwqe6mpthpux-portrait.webp",
       "ratio": 0.9276
     },
     "mediaBase": "https://media.pawelkozak.net",
-    "hidden": false
+    "hidden": false,
+    "filmpolski": "https://filmpolski.pl/fp/index.php?osoba=11150985"
   },
   "projects": [
     {
@@ -214,18 +215,6 @@
           "id": "mwquarkxw52o",
           "type": "image",
           "src": "media/pipsquick/mwquarhjvdin-grajdlo-stills-final-1-1-9.webp",
-          "ratio": 1.85
-        },
-        {
-          "id": "mwquarq1eorl",
-          "type": "image",
-          "src": "media/pipsquick/mwquarkxzazr-grajdlo-stills-final-1-1-10.webp",
-          "ratio": 1.8498
-        },
-        {
-          "id": "mwquarv8uic9",
-          "type": "image",
-          "src": "media/pipsquick/mwquarq1p027-grajdlo-stills-final-1-1-12.webp",
           "ratio": 1.85
         }
       ]
