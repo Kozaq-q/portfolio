@@ -233,13 +233,14 @@
     {
       "p": "profundum",
       "m": "mwqj68j7q4te",
-      "w": 34,
+      "w": 31,
       "fy": 85,
       "fx": 50
     },
     {
       "p": "gooddog",
-      "m": "mwqt6wwrv0yg"
+      "m": "mwqt6wwrv0yg",
+      "w": 37
     },
     {
       "p": "metro4x",
@@ -259,20 +260,22 @@
     {
       "p": "fromtheshore",
       "m": "mwqjvy1923ti",
-      "s": "s"
+      "w": 34
     },
     {
       "p": "metro4x",
       "m": "mwqk67hes4yv",
-      "s": "xs"
+      "w": 31
     },
     {
       "p": "gooddog",
-      "m": "mwqt6x3k81qz"
+      "m": "mwqt6x3k81qz",
+      "w": 34
     },
     {
       "p": "gooddog",
-      "m": "mwqt9ryjet21"
+      "m": "mwqt9ryjet21",
+      "w": 30
     }
   ],
   "homePhone": [
