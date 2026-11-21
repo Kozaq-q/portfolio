@@ -24,6 +24,70 @@
   },
   "projects": [
     {
+      "slug": "pipsquick",
+      "title": "Pipsquick",
+      "type": "Short film",
+      "year": 2024,
+      "crew": [
+        {
+          "role": "Director",
+          "name": "Lena Jaworska"
+        },
+        {
+          "role": "Cinematographer",
+          "name": "Paweł Kozak"
+        }
+      ],
+      "description": "",
+      "festivals": [],
+      "film": "",
+      "media": [
+        {
+          "id": "mwqu9o7lr0yz",
+          "type": "video",
+          "src": "r2:media/pipsquick/mwqu9o250rqj-grajdlo1-portfolio.mov",
+          "poster": "media/pipsquick/mwqu9o250rqj-grajdlo1-portfolio-poster.webp",
+          "ratio": 1.85
+        },
+        {
+          "id": "mwquarb6cr61",
+          "type": "image",
+          "src": "media/pipsquick/mwquar6ieguf-grajdlo-stills-final-1-1-1.webp",
+          "ratio": 1.85
+        },
+        {
+          "id": "mwquardrlrke",
+          "type": "image",
+          "src": "media/pipsquick/mwquarb6ag5g-grajdlo-stills-final-1-1-4.webp",
+          "ratio": 1.8493
+        },
+        {
+          "id": "mwquarhjq6gq",
+          "type": "image",
+          "src": "media/pipsquick/mwquardrldaa-grajdlo-stills-final-1-1-5.webp",
+          "ratio": 1.85
+        },
+        {
+          "id": "mwquarkxw52o",
+          "type": "image",
+          "src": "media/pipsquick/mwquarhjvdin-grajdlo-stills-final-1-1-9.webp",
+          "ratio": 1.85
+        },
+        {
+          "id": "mwquarq1eorl",
+          "type": "image",
+          "src": "media/pipsquick/mwquarkxzazr-grajdlo-stills-final-1-1-10.webp",
+          "ratio": 1.8498
+        },
+        {
+          "id": "mwquarv8uic9",
+          "type": "image",
+          "src": "media/pipsquick/mwquarq1p027-grajdlo-stills-final-1-1-12.webp",
+          "ratio": 1.85
+        }
+      ]
+    },
+    {
       "slug": "profundum",
       "title": "Profundum",
       "type": "Fashion film",
@@ -292,6 +356,18 @@
       "p": "gooddog",
       "m": "mwqt9ryjet21",
       "w": 30
+    },
+    {
+      "p": "pipsquick",
+      "m": "mwquarb6cr61"
+    },
+    {
+      "p": "pipsquick",
+      "m": "mwqu9o7lr0yz"
+    },
+    {
+      "p": "pipsquick",
+      "m": "mwquardrlrke"
     }
   ],
   "homePhone": [
@@ -348,6 +424,18 @@
     {
       "p": "gooddog",
       "m": "mwqt9ryjet21"
+    },
+    {
+      "p": "pipsquick",
+      "m": "mwquarb6cr61"
+    },
+    {
+      "p": "pipsquick",
+      "m": "mwqu9o7lr0yz"
+    },
+    {
+      "p": "pipsquick",
+      "m": "mwquardrlrke"
     }
   ]
 }
