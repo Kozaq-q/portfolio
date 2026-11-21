@@ -91,7 +91,8 @@ body.locked .bar { mix-blend-mode: normal; color: var(--fg); }
 }
 .label i { font-style: normal; opacity: .72; font-size: 12px; }
 a.cell:hover .label, a.cell:focus-visible .label { opacity: 1; transform: none; }
-@media (hover: none) { .label { opacity: 1; transform: none; } }
+/* touch screens: names stay hidden, like on desktop; they show while a tile is pressed */
+@media (hover: none) { a.cell:hover .label { opacity: 0; transform: translateY(5px); } a.cell:active .label { opacity: 1; transform: none; } }
 /* narrow tiles: title only */
 @container (max-width: 230px) { .label i { display: none; } .label { left: 10px; right: 10px; bottom: 9px; } }
 /* very small tiles (phones showing the desktop layout): no caption */
