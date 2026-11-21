@@ -24,6 +24,48 @@
   },
   "projects": [
     {
+      "slug": "profundum",
+      "title": "Profundum",
+      "type": "Fashion film",
+      "year": 2026,
+      "crew": [
+        {
+          "role": "Director",
+          "name": "Ivan Krupenikov"
+        },
+        {
+          "role": "Cinematographer",
+          "name": "Paweł Kozak"
+        }
+      ],
+      "description": "",
+      "festivals": [],
+      "film": "",
+      "media": [
+        {
+          "id": "mwqj61flt1vj",
+          "type": "video",
+          "src": "r2:media/project/mwqj619jrh9t-profundum1-portfolio.mov",
+          "poster": "media/project/mwqj619jrh9t-profundum1-portfolio-poster.webp",
+          "ratio": 1.7778
+        },
+        {
+          "id": "mwqj65mtz2cf",
+          "type": "video",
+          "src": "r2:media/project/mwqj65gka3da-profundum2-portfolio.mov",
+          "poster": "media/project/mwqj65gka3da-profundum2-portfolio-poster.webp",
+          "ratio": 1.7778
+        },
+        {
+          "id": "mwqj68j7q4te",
+          "type": "video",
+          "src": "r2:media/project/mwqj68bxx474-profundum3-portfolio.mov",
+          "poster": "media/project/mwqj68bxx474-profundum3-portfolio-poster.webp",
+          "ratio": 1.7778
+        }
+      ]
+    },
+    {
       "slug": "metro4x",
       "title": "Metro4x - \"Nic nie płonie\"",
       "type": "Music Video clip",
@@ -110,48 +152,6 @@
           "src": "r2:media/fromtheshore/mwqjvxxa6r1d-bracia3-portfolio.mov",
           "poster": "media/fromtheshore/mwqjvxxa6r1d-bracia3-portfolio-poster.webp",
           "ratio": 1.8963
-        }
-      ]
-    },
-    {
-      "slug": "profundum",
-      "title": "Profundum",
-      "type": "Fashion film",
-      "year": 2026,
-      "crew": [
-        {
-          "role": "Director",
-          "name": "Ivan Krupenikov"
-        },
-        {
-          "role": "Cinematographer",
-          "name": "Paweł Kozak"
-        }
-      ],
-      "description": "",
-      "festivals": [],
-      "film": "",
-      "media": [
-        {
-          "id": "mwqj61flt1vj",
-          "type": "video",
-          "src": "r2:media/project/mwqj619jrh9t-profundum1-portfolio.mov",
-          "poster": "media/project/mwqj619jrh9t-profundum1-portfolio-poster.webp",
-          "ratio": 1.7778
-        },
-        {
-          "id": "mwqj65mtz2cf",
-          "type": "video",
-          "src": "r2:media/project/mwqj65gka3da-profundum2-portfolio.mov",
-          "poster": "media/project/mwqj65gka3da-profundum2-portfolio-poster.webp",
-          "ratio": 1.7778
-        },
-        {
-          "id": "mwqj68j7q4te",
-          "type": "video",
-          "src": "r2:media/project/mwqj68bxx474-profundum3-portfolio.mov",
-          "poster": "media/project/mwqj68bxx474-profundum3-portfolio-poster.webp",
-          "ratio": 1.7778
         }
       ]
     }
