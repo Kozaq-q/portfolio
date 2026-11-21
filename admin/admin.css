@@ -202,3 +202,5 @@ body.dragging, body.dragging * { cursor: grabbing !important; }
 .canvastoggle { display: inline-flex; gap: 6px; align-items: center; font-size: 13px; cursor: pointer; padding: 6px 10px; border: 1px solid var(--line); border-radius: 3px; background: var(--card); }
 .canvastoggle input { width: auto; margin: 0; }
 .ht.freedrag { z-index: 5; box-shadow: 0 18px 40px -12px rgba(0,0,0,.5); cursor: grabbing; opacity: .92; }
+
+.sbar small { display: block; font-size: .7em; opacity: .7; margin-top: 1px; }

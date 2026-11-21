@@ -1,12 +1,12 @@
 {
   "settings": {
     "name": "Paweł Kozak",
-    "role": "Cinematographer",
+    "role": "Director of photography",
     "email": "contact@pawelkozak.net",
     "instagram": "https://www.instagram.com/kozaq__/",
     "showreel": "",
-    "bio": "Cinematographer based in Warsaw\nK.Kieślowski film school\n",
-    "description": "Cinematographer",
+    "bio": "Director of photography based in Warsaw\nK.Kieślowski film school\n",
+    "description": "Director of photography",
     "siteUrl": "https://pawelkozak.net",
     "theme": "light",
     "repo": {
@@ -35,7 +35,7 @@
           "name": "Ivan Krupenikov"
         },
         {
-          "role": "Cinematographer",
+          "role": "Director of photography",
           "name": "Paweł Kozak"
         }
       ],
@@ -77,7 +77,7 @@
           "name": "Naomi"
         },
         {
-          "role": "Cinematographer",
+          "role": "Director of photography",
           "name": "Paweł Kozak"
         }
       ],
@@ -125,7 +125,7 @@
           "name": "Adelina Borets"
         },
         {
-          "role": "Cinematographer",
+          "role": "Director of photography",
           "name": "Paweł Kozak"
         }
       ],
@@ -178,7 +178,7 @@
           "name": "Lena Jaworska"
         },
         {
-          "role": "Cinematographer",
+          "role": "Director of photography",
           "name": "Paweł Kozak"
         }
       ],
@@ -230,7 +230,7 @@
           "name": "Adelina Borets"
         },
         {
-          "role": "Cinematographer",
+          "role": "Director of photography",
           "name": "Paweł Kozak"
         }
       ],

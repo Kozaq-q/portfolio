@@ -1,8 +1,8 @@
 // Studio — content editor for the portfolio.
 // Edits content/site.json and media in the GitHub repository through the GitHub API.
 // Nothing is stored on a server: the access token lives only in this browser (localStorage).
-import { allShells, FONTS, V as STUDIO_V } from '../assets/shell.js?v=25';
-import { packGrid, packCanvas, packMirror, renderGrid, REF, SHAPES, PRESETS, sizePct, cropRect, croppedRatio, applyCrop } from '../assets/wall.js?v=25';
+import { allShells, FONTS, V as STUDIO_V } from '../assets/shell.js?v=26';
+import { packGrid, packCanvas, packMirror, renderGrid, REF, SHAPES, PRESETS, sizePct, cropRect, croppedRatio, applyCrop } from '../assets/wall.js?v=26';
 
 const CFG_KEY = 'studio.cfg';
 const R2_KEY = 'studio.r2'; // video storage keys (Cloudflare R2) — kept only in this browser
@@ -380,7 +380,7 @@ function viewProjects(wrap) {
   $('[data-add]', el).onclick = () => {
     let slug = 'new-project', n = 2;
     while (ps.some((p) => p.slug === slug)) slug = `new-project-${n++}`;
-    ps.unshift({ slug, title: 'New project', type: 'Short film', year: new Date().getFullYear(), crew: [{ role: 'Director', name: '' }, { role: 'Cinematographer', name: S.site.settings.name }], description: '', festivals: [], film: '', media: [] });
+    ps.unshift({ slug, title: 'New project', type: 'Short film', year: new Date().getFullYear(), crew: [{ role: 'Director', name: '' }, { role: 'Director of photography', name: S.site.settings.name }], description: '', festivals: [], film: '', media: [] });
     S.current = slug;
     render();
   };
@@ -534,7 +534,7 @@ function viewHome(wrap) {
       <div class="homecols">
         <div class="stage">
           <div class="screen ${phone ? 'phone' : ''} ${st.theme === 'dark' ? 'dark' : ''}">
-            <div class="sbar"><span>${esc(st.name)}</span><span>Projects<i></i>Contact</span></div>
+            <div class="sbar"><span>${esc(st.name)}${st.role ? `<small>${esc(st.role)}</small>` : ''}</span><span>Projects<i></i>Contact</span></div>
             <div class="hw"></div>
             <div class="fold"><span>end of the first screen</span></div>
             <div class="sfoot"><span>${esc(st.description || st.role)}</span></div>

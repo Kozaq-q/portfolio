@@ -69,7 +69,8 @@ img, video { display: block; width: 100%; height: 100%; object-fit: cover; }
   pointer-events: none;
 }
 .bar > * { pointer-events: auto; }
-.bar .name { font-weight: var(--name-w); }
+.bar .name { font-weight: var(--name-w); line-height: 1.25; }
+.bar .name small { display: block; font-size: 10.5px; font-weight: 400; letter-spacing: .02em; opacity: .7; margin-top: 1px; }
 .bar nav { display: flex; gap: 28px; }
 .bar nav button, .bar nav a { opacity: .85; transition: opacity .3s var(--ease); }
 .bar nav button:hover, .bar nav a:hover { opacity: 1; }

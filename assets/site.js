@@ -1,5 +1,5 @@
-import { mountWall, PHONE, cropRect, croppedRatio, applyCrop } from './wall.js?v=25';
-import { FONTS } from './shell.js?v=25';
+import { mountWall, PHONE, cropRect, croppedRatio, applyCrop } from './wall.js?v=26';
+import { FONTS } from './shell.js?v=26';
 
 const doc = document.documentElement;
 const ROOT = doc.dataset.root || '';
@@ -93,7 +93,7 @@ function chrome(site) {
   const s = site.settings;
   const bar = h(`
     <header class="bar">
-      <a class="name" href="${HOME}">${esc(s.name)}</a>
+      <a class="name" href="${HOME}">${esc(s.name)}${s.role ? `<small>${esc(s.role)}</small>` : ''}</a>
       <nav>
         <button data-open="index">Projects</button>
         ${s.showreel ? '<button data-reel>Showreel</button>' : ''}
