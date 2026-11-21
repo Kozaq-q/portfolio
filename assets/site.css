@@ -27,10 +27,16 @@
 
 /* typefaces (data-font on <html>, set in Studio); --adjust evens out x-heights so sizes match */
 :root[data-font="switzer"] { --font: "Switzer", "Helvetica Neue", Helvetica, Arial, sans-serif; --trk: .8; --adjust: .52; }
-:root[data-font="jost"] { --font: "Jost", Futura, "Century Gothic", sans-serif; --trk: .5; --adjust: .51; }
-:root[data-font="franklin"] { --font: "Libre Franklin", "Franklin Gothic", Arial, sans-serif; --trk: .85; --adjust: .52; }
-:root[data-font="tenor"] { --font: "Tenor Sans", Optima, Candara, sans-serif; --trk: .35; --name-w: 400; --adjust: .5; }
-:root[data-font="familjen"] { --font: "Familjen Grotesk", "Helvetica Neue", Arial, sans-serif; --trk: .7; --adjust: .52; }
+:root[data-font="general"] { --font: "General Sans", "Helvetica Neue", Arial, sans-serif; --trk: .7; --adjust: .52; }
+:root[data-font="synonym"] { --font: "Synonym", "Helvetica Neue", Arial, sans-serif; --trk: .7; --adjust: .52; }
+:root[data-font="mona"] { --font: "Mona Sans", "Helvetica Neue", Arial, sans-serif; --trk: .7; --adjust: .52; }
+:root[data-font="rethink"] { --font: "Rethink Sans", "Helvetica Neue", Arial, sans-serif; --trk: .7; --adjust: .52; }
+:root[data-font="funnel"] { --font: "Funnel Sans", "Helvetica Neue", Arial, sans-serif; --trk: .7; --adjust: .52; }
+:root[data-font="wix"] { --font: "Wix Madefor Display", "Helvetica Neue", Arial, sans-serif; --trk: .7; --adjust: .52; }
+:root[data-font="golos"] { --font: "Golos Text", "Helvetica Neue", Arial, sans-serif; --trk: .7; --adjust: .52; }
+:root[data-font="intertight"] { --font: "Inter Tight", "Helvetica Neue", Arial, sans-serif; --trk: .7; --adjust: .52; }
+:root[data-font="epilogue"] { --font: "Epilogue", "Helvetica Neue", Arial, sans-serif; --trk: .7; --adjust: .52; }
+:root[data-font="satoshi"] { --font: "Satoshi", "Helvetica Neue", Arial, sans-serif; --trk: .7; --adjust: .52; }
 
 @view-transition { navigation: auto; }
 ::view-transition-old(root), ::view-transition-new(root) { animation-duration: .35s; }

@@ -3,19 +3,24 @@
 // The page content itself is rendered by assets/site.js from content/site.json.
 
 // Bump when assets/*.js or *.css change so browsers fetch the new code instead of a cached copy.
-export const V = '22';
+export const V = '24';
 
 // Typefaces the site can use (Google Fonts). Chosen in Studio → Settings.
 const G = 'https://fonts.googleapis.com/css2?display=swap&family=';
 export const FONTS = {
-  grotesk: { label: 'Schibsted Grotesk — current', url: G + 'Schibsted+Grotesk:ital,wght@0,400;0,500;1,400' },
-  switzer: { label: 'Switzer — quiet Swiss grotesk', url: 'https://api.fontshare.com/v2/css?f[]=switzer@400,500,401&display=swap' },
-  jost: { label: 'Jost — classic geometric, Futura-like', url: G + 'Jost:ital,wght@0,400;0,500;1,400' },
-  franklin: { label: 'Libre Franklin — old American grotesque', url: G + 'Libre+Franklin:ital,wght@0,400;0,500;1,400' },
-  tenor: { label: 'Tenor Sans — soft, humanist, Optima-like', url: G + 'Tenor+Sans' },
-  familjen: { label: 'Familjen Grotesk — Scandinavian, a little character', url: G + 'Familjen+Grotesk:ital,wght@0,400;0,500;1,400' },
+  general: { label: 'General Sans — favourite so far', url: 'https://api.fontshare.com/v2/css?f[]=general-sans@400,500&display=swap' },
+  synonym: { label: 'Synonym — same family feel, a bit narrower', url: 'https://api.fontshare.com/v2/css?f[]=synonym@400,500&display=swap' },
+  mona: { label: 'Mona Sans — refined neo-grotesk', url: G + 'Mona+Sans:wght@400;500' },
+  rethink: { label: 'Rethink Sans — calm, slightly geometric', url: G + 'Rethink+Sans:ital,wght@0,400;0,500;1,400' },
+  funnel: { label: 'Funnel Sans — plain, modern', url: G + 'Funnel+Sans:ital,wght@0,400;0,500;1,400' },
+  wix: { label: 'Wix Madefor Display — soft neutral', url: G + 'Wix+Madefor+Display:wght@400;500' },
+  golos: { label: 'Golos Text — sober, even', url: G + 'Golos+Text:wght@400;500' },
+  intertight: { label: 'Inter Tight — Inter, tighter and more elegant', url: G + 'Inter+Tight:ital,wght@0,400;0,500;1,400' },
+  epilogue: { label: 'Epilogue — clean with a slight edge', url: G + 'Epilogue:ital,wght@0,400;0,500;1,400' },
+  satoshi: { label: 'Satoshi', url: 'https://api.fontshare.com/v2/css?f[]=satoshi@400,500&display=swap' },
+  switzer: { label: 'Switzer — current', url: 'https://api.fontshare.com/v2/css?f[]=switzer@400,500,401&display=swap' },
 };
-export const fontOf = (s) => (FONTS[s?.font] ? s.font : 'grotesk');
+export const fontOf = (s) => (FONTS[s?.font] ? s.font : 'switzer');
 
 const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 

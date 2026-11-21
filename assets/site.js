@@ -1,5 +1,5 @@
-import { mountWall, PHONE, cropRect, croppedRatio, applyCrop } from './wall.js?v=22';
-import { FONTS } from './shell.js?v=22';
+import { mountWall, PHONE, cropRect, croppedRatio, applyCrop } from './wall.js?v=24';
+import { FONTS } from './shell.js?v=24';
 
 const doc = document.documentElement;
 const ROOT = doc.dataset.root || '';
@@ -163,6 +163,7 @@ function chrome(site) {
   buttons.forEach((b) => (b.onclick = () => set(b.dataset.open)));
   addEventListener('keydown', (e) => { if (e.key === 'Escape' && open) set(open); });
   if (/^#(info|contact)$/.test(location.hash)) set('info');
+  if (/^#(projects|index)$/.test(location.hash)) set('index');
 
   for (const b of [...bar.querySelectorAll('[data-reel]'), ...info.querySelectorAll('[data-reel]')]) {
     b.addEventListener('click', (e) => { e.preventDefault(); openReel(s.showreel); });
