@@ -24,6 +24,54 @@
   },
   "projects": [
     {
+      "slug": "metro4x",
+      "title": "Metro4x - \"Nic nie płonie\"",
+      "type": "Music Video clip",
+      "year": 2025,
+      "crew": [
+        {
+          "role": "Director",
+          "name": "Naomi"
+        },
+        {
+          "role": "Cinematographer",
+          "name": "Paweł Kozak"
+        }
+      ],
+      "description": "",
+      "festivals": [],
+      "film": "https://vimeo.com/1129202706/7209890144?fl=tl&fe=ec&share=copy",
+      "media": [
+        {
+          "id": "mwqk6349x733",
+          "type": "video",
+          "src": "r2:media/metro4x/mwqk62zeoirx-metro1-portfolio.mov",
+          "poster": "media/metro4x/mwqk62zeoirx-metro1-portfolio-poster.webp",
+          "ratio": 1.6667
+        },
+        {
+          "id": "mwqk67dgwtk6",
+          "type": "video",
+          "src": "r2:media/metro4x/mwqk677kano5-metro2-portfolio.mov",
+          "poster": "media/metro4x/mwqk677kano5-metro2-portfolio-poster.webp",
+          "ratio": 1.6667
+        },
+        {
+          "id": "mwqk67hes4yv",
+          "type": "video",
+          "src": "r2:media/metro4x/mwqk67dgewg5-metro3-portfolio.mov",
+          "poster": "media/metro4x/mwqk67dgewg5-metro3-portfolio-poster.webp",
+          "ratio": 1.6667
+        },
+        {
+          "id": "mwqk67l9gx4d",
+          "type": "image",
+          "src": "media/metro4x/mwqk67heql0i-still-2026-11-21-162049-1-5-1.webp",
+          "ratio": 1.6667
+        }
+      ]
+    },
+    {
       "slug": "fromtheshore",
       "title": "From the shore",
       "type": "Short film",
@@ -515,6 +563,22 @@
     {
       "p": "fromtheshore",
       "m": "mwqjvy1923ti"
+    },
+    {
+      "p": "metro4x",
+      "m": "mwqk6349x733"
+    },
+    {
+      "p": "metro4x",
+      "m": "mwqk67dgwtk6"
+    },
+    {
+      "p": "metro4x",
+      "m": "mwqk67hes4yv"
+    },
+    {
+      "p": "metro4x",
+      "m": "mwqk67l9gx4d"
     }
   ],
   "homePhone": [
@@ -607,6 +671,22 @@
     {
       "p": "fromtheshore",
       "m": "mwqjvy1923ti"
+    },
+    {
+      "p": "metro4x",
+      "m": "mwqk6349x733"
+    },
+    {
+      "p": "metro4x",
+      "m": "mwqk67dgwtk6"
+    },
+    {
+      "p": "metro4x",
+      "m": "mwqk67hes4yv"
+    },
+    {
+      "p": "metro4x",
+      "m": "mwqk67l9gx4d"
     }
   ]
 }
