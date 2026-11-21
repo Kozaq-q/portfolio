@@ -189,3 +189,7 @@ body.dragging, body.dragging * { cursor: grabbing !important; }
 .frameedit.static { cursor: default; }
 .frameedit.static .win { box-shadow: none; outline: none; }
 .fehint { margin: 6px 0 0; }
+
+/* size slider */
+.szval { float: right; color: var(--fg); font-size: 12px; }
+.szrange { width: 100%; margin: 2px 0 10px; accent-color: var(--fg); padding: 0; border: 0; background: none; }

@@ -1,5 +1,5 @@
-import { mountWall, PHONE } from './wall.js?v=16';
-import { FONTS } from './shell.js?v=16';
+import { mountWall, PHONE } from './wall.js?v=17';
+import { FONTS } from './shell.js?v=17';
 
 const doc = document.documentElement;
 const ROOT = doc.dataset.root || '';
@@ -84,7 +84,7 @@ function cell(m, p, linked = true, opt = {}) {
   el.append(f);
   if (linked) el.append(h(`<span class="label"><span>${esc(p.title)}</span><i>${esc(kind(p))}</i></span>`));
   // no size = automatic (desktop treats it as M; phones pick full width or half by shape)
-  return { el, ratio: +opt.r || m.ratio || 16 / 9, size: opt.s || '', br: !!opt.br };
+  return { el, ratio: +opt.r || m.ratio || 16 / 9, size: opt.s || '', w: opt.w, br: !!opt.br };
 }
 
 /* ---------- header + overlays ---------- */
@@ -181,10 +181,10 @@ function openReel(link) {
 
 /* ---------- pages ---------- */
 function home(site, main) {
-  const cells = (list, sized) => (list || []).map(({ p, m, s, r, br, fx, fy }) => {
+  const cells = (list, sized) => (list || []).map(({ p, m, s, w, r, br, fx, fy }) => {
     const pr = site.projects.find((x) => x.slug === p && !x.hidden);
     const media = pr?.media.find((x) => x.id === m);
-    return media ? cell(media, pr, true, sized ? { s, r, br, fx, fy } : { r, fx, fy }) : null;
+    return media ? cell(media, pr, true, sized ? { s, w, r, br, fx, fy } : { r, fx, fy }) : null;
   }).filter(Boolean);
   const desk = cells(site.home, true);
   // phones get their own order and sizes when set up in Studio, otherwise the desktop order with automatic sizes

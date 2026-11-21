@@ -1,100 +1,70 @@
 // Wall layouts, shared by the public site (assets/site.js) and the Studio preview (admin/admin.js),
 // so what you arrange in Studio is exactly what visitors see.
 //
-// Homepage — packGrid: sections of columns (width you set × shape of the shot), see below.
+// Homepage — packGrid: free masonry, see below.
 // Project pages — packRows: plain justified rows, no settings.
 //
-// Each item: { ratio, size, br }   br: true = this tile starts a new row
+// Each item: { ratio, w (size in % of the page), size (older saved sizes), br (start below) }
 
-// desktop widths ('' = automatic, by the shot's shape)
-export const SIZES = [['', 'Auto'], ['q', '¼'], ['t', '⅓'], ['h', '½'], ['tt', '⅔'], ['tq', '¾'], ['f', 'Full']];
-const DESK = { q: 1 / 4, t: 1 / 3, h: 1 / 2, tt: 2 / 3, tq: 3 / 4, f: 1 };
-// sizes saved by earlier versions of Studio
-const LEGACY = { xs: 'q', s: 't', m: '', l: 'f', xl: 'f' };
-export const deskSize = (s) => (s in DESK ? s : LEGACY[s] ?? '');
 // crop a tile to a fixed shape on the homepage ('' = the shot's own shape)
 export const SHAPES = [['', 'Original'], ['2.39', '2.39 : 1'], ['1.78', '16 : 9'], ['1.33', '4 : 3'], ['1', '1 : 1'], ['0.8', '4 : 5']];
 
-// phone widths (no size = automatic: landscape shots full width, vertical ones two in a row)
-export const PHONE_SIZES = [['', 'Auto'], ['s', '⅓'], ['m', '½'], ['l', 'Full']];
-const SHARE = { s: 1 / 3, m: 1 / 2, l: 1 };
-
 export const PHONE = 860; // widths at or below this use the phone layout
 
-// homepage: sections of columns.
-// Every tile has the width you set and the exact shape of its shot (or the crop you chose).
-// Tiles build a SECTION of side-by-side columns: a tile whose width isn't in the section yet opens
-// a new column next to the others; a tile whose width already has a column drops into the shortest
-// such column — so a big square can sit beside a stack of panoramas, and panoramas that don't fit
-// on the right continue under the square. "Auto" tiles go into whichever column is shortest.
-// A section closes when a tile can't join it (a width it has no column for and no room left, a Full
-// tile, or "start below"). On closing, the columns meet halfway in height (shots slightly trimmed
-// top/bottom, spread over the column) so the section ends in one straight line, and a section that
-// doesn't reach across the whole width is widened to fill it. Columns are solid strips, so there are never empty holes.
+// homepage: free masonry.
+// A tile is never cropped unless you pick a shape for it: it keeps the proportions of its shot.
+// Its SIZE is how wide it is, in % of the page (any value; presets ¼ … Full). Tiles drop, in order,
+// into the highest spot where they fit — next to a neighbour or against the page edge — so rows
+// break naturally: a big shot can reach lower than its neighbour and the next shots tuck in around it.
+// Gaps between neighbours are always one seam wide. "Start below" begins below everything above.
+export const PRESETS = [['', 'Auto'], [25, '¼'], [33.33, '⅓'], [50, '½'], [66.67, '⅔'], [100, 'Full']];
+const LEGACY_PCT = { q: 25, t: 33.33, h: 50, tt: 66.67, tq: 75, f: 100, xs: 25, s: 33.33, l: 100, xl: 100 };
+const PHONE_PCT = { s: 33.33, m: 50, l: 100 };
+// size of a tile in % of the page width; '' = automatic by shape
+export function sizePct(c, phone) {
+  if (c.w) return Math.min(100, Math.max(8, +c.w));
+  if (phone && PHONE_PCT[c.size]) return PHONE_PCT[c.size];
+  if (!phone && LEGACY_PCT[c.size]) return LEGACY_PCT[c.size];
+  if (phone) return c.ratio < 1 ? 50 : 100;
+  return c.ratio < 0.9 ? 25 : c.ratio < 1.3 ? 33.33 : 50;
+}
+
 export function packGrid(items, { W, seam, vw, vh }) {
   const phone = vw <= PHONE;
-  const explicit = (c) => (phone ? SHARE[c.size] : DESK[deskSize(c.size)]);
-  const auto = (c) => (phone ? (c.ratio < 1 ? 1 / 2 : 1) : c.ratio < 0.9 ? 1 / 4 : c.ratio < 1.3 ? 1 / 3 : 1 / 2);
-  const cap = vh * (phone ? 0.8 : 0.92);
-  const unit = W + seam;
-  const out = [];
-  let top = 0;      // y where the current section starts
-  let cols = [];    // { share, tiles: [{ c, h }] }
-  const used = () => cols.reduce((a, k) => a + k.share, 0);
-  const colH = (k) => k.tiles.reduce((a, t) => a + t.h + seam, 0);
-
-  const close = () => {
-    if (!cols.length) return;
-    // fill the width: scale the columns up if the section is short
-    const f = 1 / used();
-    if (f > 1.001) for (const k of cols) {
-      k.share *= f;
-      const w = k.share * unit - seam;
-      for (const t of k.tiles) t.h = Math.min(w / t.c.ratio, cap);
-    }
-    // one straight bottom edge, met halfway: short columns grow a little, tall ones give a little,
-    // spread evenly over every shot in the column, so no single frame is cropped hard
-    const hs = cols.map(colH);
-    const bottom = cols.length > 1 ? Math.sqrt(Math.min(...hs) * Math.max(...hs)) : hs[0];
-    let x = 0;
-    for (const k of cols) {
-      const gaps = seam * k.tiles.length, have = colH(k) - gaps, f = (bottom - gaps) / have;
-      for (const t of k.tiles) t.h *= f;
-      let y = top;
-      const w = k.share * unit - seam;
-      for (const t of k.tiles) { out.push({ item: t.c, x, y, w, h: t.h }); y += t.h + seam; }
-      x += k.share * unit;
-    }
-    top += bottom;
-    cols = [];
+  const cap = vh * (phone ? 0.8 : 0.92);   // a very tall shot is made narrower, never cropped
+  const boxes = [];
+  const floorAt = (x, w) => {
+    let y = 0;
+    for (const b of boxes) if (b.x < x + w + seam - 0.5 && b.x + b.w + seam > x + 0.5) y = Math.max(y, b.y + b.h + seam);
+    return y;
   };
-
-  for (const c of items) {
-    const want = explicit(c);
-    const share = want || auto(c);
-    if (c.br || share >= 0.999) close();
-    let col = null;
-    // stacking under a column only makes sense while there is a gap to fill: if the shot would
-    // stick out below the tallest column by more than half its own height, start a new section
-    const fitsUnder = (k) => {
-      const h = Math.min((k.share * unit - seam) / c.ratio, cap);
-      return colH(k) + h - Math.max(...cols.map(colH)) <= h * 0.5;
-    };
-    if (!want && cols.length && used() >= 0.999) {
-      const k = cols.reduce((a, q) => (colH(q) < colH(a) - 0.5 ? q : a)); // auto: shortest column
-      if (fitsUnder(k)) col = k; else close();
-    } else if (cols.length && used() + share > 1.001) {
-      const same = cols.filter((k) => Math.abs(k.share - share) < 0.01);
-      const k = same.length ? same.reduce((a, q) => (colH(q) < colH(a) - 0.5 ? q : a)) : null;
-      if (k && fitsUnder(k)) col = k; else close();
+  let below = 0; // "start below": nothing may go above this line any more
+  items.forEach((c) => {
+    let w = (sizePct(c, phone) / 100) * (W + seam) - seam;
+    let h = w / c.ratio;
+    if (h > cap) { h = cap; w = h * c.ratio; }
+    w = Math.min(w, W);
+    if (c.br) below = boxes.reduce((m, b) => Math.max(m, b.y + b.h + seam), 0);
+    // candidate spots: page edges, and flush against every placed tile
+    const xs = new Set([0, W - w]);
+    for (const b of boxes) { xs.add(b.x + b.w + seam); xs.add(b.x - seam - w); }
+    let best = null;
+    for (let x of xs) {
+      if (x < -0.5 || x + w > W + 0.5) continue;
+      x = Math.max(0, Math.min(W - w, x));
+      const y = Math.max(below, floorAt(x, w));
+      const score = [Math.round(y), Math.round(x)]; // highest spot first, then leftmost
+      if (!best || score[0] < best.s[0] || (score[0] === best.s[0] && score[1] < best.s[1])) best = { x, y, s: score };
     }
-    if (!col) { col = { share, tiles: [] }; cols.push(col); }
-    const w = col.share * unit - seam;
-    col.tiles.push({ c, h: Math.min(w / c.ratio, cap) });
-    if (share >= 0.999) close();
-  }
-  close();
-  return { height: Math.max(0, top - seam), boxes: out };
+    // nearly touching the page edge: grow a touch (in proportion, nothing cropped) so the edge is
+    // straight and every gap stays one seam wide
+    let { x, y } = best;
+    const room = W - (x + w);
+    if (room > 0.5 && room < W * 0.06 && floorAt(x + w + seam, room - seam) <= y + 0.5) { w += room; h = w / c.ratio; }
+    boxes.push({ item: c, x, y, w, h });
+  });
+  const height = boxes.reduce((m, b) => Math.max(m, b.y + b.h), 0);
+  return { height, boxes };
 }
 
 // Places a packGrid result. pad = gap around the wall; k scales everything (Studio preview).

@@ -1,8 +1,8 @@
 // Studio — content editor for the portfolio.
 // Edits content/site.json and media in the GitHub repository through the GitHub API.
 // Nothing is stored on a server: the access token lives only in this browser (localStorage).
-import { allShells, FONTS, V as STUDIO_V } from '../assets/shell.js?v=16';
-import { packGrid, renderGrid, SIZES, SHAPES, PHONE_SIZES, deskSize } from '../assets/wall.js?v=16';
+import { allShells, FONTS, V as STUDIO_V } from '../assets/shell.js?v=17';
+import { packGrid, renderGrid, SHAPES, PRESETS, sizePct } from '../assets/wall.js?v=17';
 
 const CFG_KEY = 'studio.cfg';
 const R2_KEY = 'studio.r2'; // video storage keys (Cloudflare R2) — kept only in this browser
@@ -517,7 +517,7 @@ function viewHome(wrap) {
   const el = h(`
     <div>
       <h2>Homepage</h2>
-      <p class="hint" style="margin-bottom:18px">A smaller copy of your front page, in its real proportions. Drag tiles to reorder them. Click a tile to set its width and shape.
+      <p class="hint" style="margin-bottom:18px">A smaller copy of your front page, in its real proportions. Drag tiles to reorder them. Click a tile to set its size and shape.
         Add or remove shots with the “Homepage” checkbox inside each project.</p>
       <div class="hometools">
         <span class="seg" role="group" aria-label="Preview">
@@ -568,6 +568,7 @@ function viewHome(wrap) {
       el: node, t, p, m,
       get ratio() { return +t.r || m.ratio || 16 / 9; },
       get size() { return sized ? t.s || '' : ''; },
+      get w() { return sized ? t.w : undefined; },
       get br() { return sized && !!t.br; },
     };
     dragable(c);
@@ -761,11 +762,9 @@ function viewHome(wrap) {
       list.push(n); S.homeSel = n; update();
     }));
     if (!t) {
-      insp.innerHTML = `<p class="hint" style="margin:0">Click a tile to change its width and shape.</p>
+      insp.innerHTML = `<p class="hint" style="margin:0">Click a tile to change its size and shape.</p>
         <p class="hint">Drag tiles to put them in order — the others make room as you move.</p>
-        <p class="hint">${phone
-          ? 'On phones a size is a share of the screen width: ⅓, ½ or Full. Shots you hide here stay on the desktop.'
-          : 'Each shot is exactly the width you set (¼ … Full) and the shape of its frame. Shots drop in order into the highest free spot, so a tall shot can sit next to a stack of short ones. Where a column ends short, the shot above it is extended (trimmed) so there are no empty holes.'}</p>${tray}`;
+        <p class="hint">Make any shot bigger or smaller — it keeps its proportions; it is cropped only if you choose a shape. Shots drop, in order, into the highest place they fit, so rows break around big shots.${phone ? ' Shots you hide here stay on the desktop.' : ''}</p>${tray}`;
       bindTray();
       return;
     }
@@ -775,9 +774,10 @@ function viewHome(wrap) {
         <img src="${esc(mediaUrl(c.m.type === 'video' ? c.m.poster : c.m.src))}" alt="" draggable="false"><div class="win"></div></div>
       <p class="hint fehint"></p>
       <p class="ititle"><b>${esc(c.p.title)}</b><span>${i + 1} of ${list.length}${c.m.type === 'video' ? ' · clip' : ' · still'}</span></p>
-      <h3>${phone ? 'Width on phones' : 'Width'}</h3>
-      <div class="seg full sizes">${(phone ? PHONE_SIZES : SIZES).map(([key, l]) => `<button data-s="${key}" aria-pressed="${(phone ? t.s || '' : deskSize(t.s || '')) === key}" title="${key ? `${l} of the screen width` : 'Automatic, by the shot’s shape'}">${l}</button>`).join('')}</div>
-      <p class="hint" style="margin-top:6px">${phone ? 'Share of the screen width.' : 'Share of the screen width. The height follows the shape below, so the tile is exactly this size.'}</p>
+      <h3>${phone ? 'Size on phones' : 'Size'} <span class="szval" data-szval></span></h3>
+      <input type="range" class="szrange" data-sz min="10" max="100" step="1">
+      <div class="seg full sizes">${PRESETS.map(([key, l]) => `<button data-p="${key}" title="${key ? `${l} of the page width` : 'Automatic, by the shot’s shape'}">${l}</button>`).join('')}</div>
+      <p class="hint" style="margin-top:6px">Bigger or smaller, the shot keeps its own proportions — nothing is cut off unless you pick a shape below.</p>
       <h3>Shape on the homepage</h3>
       <div class="shapes">${SHAPES.map(([key, l]) => `<button data-r="${key}" aria-pressed="${(t.r || '') === key}"><i style="aspect-ratio:${key || c.m.ratio || 1.78}"></i>${l}</button>`).join('')}</div>
       <label class="check"><input type="checkbox" data-br ${t.br ? 'checked' : ''}> Start below everything above</label>
@@ -788,7 +788,18 @@ function viewHome(wrap) {
         <button class="btn quiet danger" data-rm>${phone ? 'Hide on phones' : 'Remove from homepage'}</button></p>${tray}`;
     bindTray();
     framing(t, c);
-    insp.querySelectorAll('[data-s]').forEach((b) => (b.onclick = () => { if (!b.dataset.s) delete t.s; else t.s = b.dataset.s; update(); }));
+    // size: a slider (any value) and presets; the tile follows live while you drag
+    const range = $('[data-sz]', insp), val = $('[data-szval]', insp);
+    const showSize = () => {
+      const pct = Math.round(sizePct({ ratio: c.ratio, size: t.s || '', w: t.w }, phone));
+      range.value = pct;
+      val.textContent = `${pct}% of the width${t.w || t.s ? '' : ' · auto'}`;
+      insp.querySelectorAll('[data-p]').forEach((b) => b.setAttribute('aria-pressed', b.dataset.p ? Math.abs(+b.dataset.p - (t.w || -1)) < 0.5 : !t.w && !t.s));
+    };
+    showSize();
+    range.oninput = () => { t.w = +range.value; delete t.s; lay(); showSize(); };
+    range.onchange = () => { status(); framing(t, c); };
+    insp.querySelectorAll('[data-p]').forEach((b) => (b.onclick = () => { delete t.s; if (b.dataset.p) t.w = +b.dataset.p; else delete t.w; update(); }));
     insp.querySelectorAll('[data-r]').forEach((b) => (b.onclick = () => { if (!b.dataset.r) delete t.r; else t.r = b.dataset.r; update(); }));
     $('[data-br]', insp).onchange = (e) => { if (e.target.checked) t.br = true; else delete t.br; update(); };
     insp.querySelectorAll('[data-mv]').forEach((b) => (b.onclick = () => {
