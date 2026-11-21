@@ -14,7 +14,11 @@
       "name": "portfolio",
       "branch": "main"
     },
-    "font": "switzer"
+    "font": "switzer",
+    "portrait": {
+      "src": "media/about/mwqe6mpthpux-portrait.webp",
+      "ratio": 0.9276
+    }
   },
   "projects": [
     {
