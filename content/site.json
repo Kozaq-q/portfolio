@@ -23,6 +23,34 @@
   },
   "projects": [
     {
+      "slug": "project",
+      "title": "Profundum",
+      "type": "Fashion film",
+      "year": 2026,
+      "crew": [
+        {
+          "role": "Director",
+          "name": "Ivan Krupenikov"
+        },
+        {
+          "role": "Cinematographer",
+          "name": "Paweł Kozak"
+        }
+      ],
+      "description": "",
+      "festivals": [],
+      "film": "",
+      "media": [
+        {
+          "id": "mwqfmi59if31",
+          "type": "video",
+          "src": "r2:media/project/mwqfmgsf2fad-profundum1-portfolio.mov",
+          "poster": "media/project/mwqfmgsf2fad-profundum1-portfolio-poster.webp",
+          "ratio": 1.7778
+        }
+      ]
+    },
+    {
       "slug": "low-tide",
       "title": "Low Tide",
       "type": "Short film",
