@@ -1,8 +1,8 @@
 // Studio — content editor for the portfolio.
 // Edits content/site.json and media in the GitHub repository through the GitHub API.
 // Nothing is stored on a server: the access token lives only in this browser (localStorage).
-import { allShells, FONTS } from '../assets/shell.js?v=8';
-import { packRows, renderRows, SIZES, SHAPES, PHONE_SIZES } from '../assets/wall.js?v=8';
+import { allShells, FONTS } from '../assets/shell.js?v=9';
+import { packRows, renderRows, SIZES, SHAPES, PHONE_SIZES } from '../assets/wall.js?v=9';
 
 const CFG_KEY = 'studio.cfg';
 const API = 'https://api.github.com';
@@ -152,8 +152,29 @@ function drawScaled(source, w, h, max) {
   return c;
 }
 
+// iPhone photos (HEIC/HEIF): Safari reads them natively; other browsers get a decoder, loaded only when needed
+const isHeic = (f) => /image\/hei[cf]/i.test(f.type) || /\.hei[cf]$/i.test(f.name);
+const isImage = (f) => f.type.startsWith('image/') || isHeic(f);
+let heicLib = null;
+const loadHeic = () => heicLib ||= new Promise((ok, bad) => {
+  const s = document.createElement('script');
+  s.src = 'https://cdn.jsdelivr.net/npm/heic2any@0.0.4/dist/heic2any.min.js';
+  s.onload = () => ok(window.heic2any);
+  s.onerror = () => { heicLib = null; bad(new Error('Could not load the HEIC reader. Check your connection, or export the photo as JPEG.')); };
+  document.head.append(s);
+});
+async function bitmapOf(file) {
+  try { return await createImageBitmap(file); } catch (e) {
+    if (!isHeic(file)) throw new Error(`This browser can't read “${file.name}”. Export it as JPEG or PNG.`);
+  }
+  const heic2any = await loadHeic();
+  let out = await heic2any({ blob: file, toType: 'image/jpeg', quality: 0.95 });
+  if (Array.isArray(out)) out = out[0];
+  return createImageBitmap(out);
+}
+
 async function processImage(file) {
-  const bmp = await createImageBitmap(file);
+  const bmp = await bitmapOf(file);
   const out = await canvasBlob(drawScaled(bmp, bmp.width, bmp.height, 2400));
   return { ...out, ratio: bmp.width / bmp.height };
 }
@@ -185,7 +206,7 @@ async function addMedia(p, fileList) {
     status(`Processing ${n + 1}/${files.length}…`);
     const base = `media/${p.slug}/${uid()}-${slugify(file.name.replace(/\.[^.]+$/, '')).slice(0, 40)}`;
     try {
-      if (file.type.startsWith('image/')) {
+      if (isImage(file)) {
         const img = await processImage(file);
         p.media.push({ id: uid(), type: 'image', src: addFile(`${base}.${img.ext}`, img.blob), ratio: +img.ratio.toFixed(4) });
       } else if (file.type.startsWith('video/') || /\.(mp4|mov|webm|m4v)$/i.test(file.name)) {
@@ -323,7 +344,7 @@ function editor(box, p) {
         <h3>Shots &amp; stills — the first one opens the project page</h3>
         <div class="media">
           ${p.media.map((m, i) => mediaCard(p, m, i)).join('')}
-          <label class="drop"><input type="file" accept="image/*,video/mp4,video/webm,video/quicktime" multiple hidden>Add photos or clips<br>click or drop files</label>
+          <label class="drop"><input type="file" accept="image/*,.heic,.heif,video/mp4,video/webm,video/quicktime" multiple hidden>Add photos or clips<br>click or drop files</label>
         </div>
         <p class="hint">Clips: MP4 (H.264), 5–10 s, no audio, ideally under 15 MB. Photos are resized automatically.</p>
       </div>
@@ -668,9 +689,9 @@ function viewSettings(wrap) {
         <div class="form" style="gap:10px">
           <p style="margin:0"><button class="btn" data-pick>${s.portrait?.src ? 'Replace photo' : 'Add your photo'}</button>
             ${s.portrait?.src ? '<button class="btn quiet danger" data-norm>Remove</button>' : ''}</p>
-          <p class="hint" style="margin:0">A portrait works best (vertical or square). It’s resized automatically.</p>
+          <p class="hint" style="margin:0">A portrait works best (vertical or square). JPEG, PNG or iPhone HEIC — it’s resized automatically.</p>
           <label><span>Photo credit (optional)</span><input data-k="portraitCredit" placeholder="Photographer’s name"></label>
-          <input type="file" accept="image/*" data-file hidden>
+          <input type="file" accept="image/*,.heic,.heif" data-file hidden>
         </div>
       </div>
       <label><span>Bio (empty line = new paragraph)</span><textarea data-k="bio" rows="6"></textarea></label>
@@ -692,7 +713,7 @@ function viewSettings(wrap) {
   $('[data-pick]', el).onclick = () => file.click();
   file.onchange = async () => {
     const f = file.files[0];
-    if (!f || !f.type.startsWith('image/')) return;
+    if (!f || !isImage(f)) return;
     status('Processing…');
     try {
       const img = await processImage(f);

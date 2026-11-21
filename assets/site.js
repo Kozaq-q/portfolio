@@ -1,5 +1,5 @@
-import { mountWall, PHONE } from './wall.js?v=8';
-import { FONTS } from './shell.js?v=8';
+import { mountWall, PHONE } from './wall.js?v=9';
+import { FONTS } from './shell.js?v=9';
 
 const doc = document.documentElement;
 const ROOT = doc.dataset.root || '';
