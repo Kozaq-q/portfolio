@@ -1,5 +1,5 @@
-import { mountWall, PHONE } from './wall.js?v=14';
-import { FONTS } from './shell.js?v=14';
+import { mountWall, PHONE } from './wall.js?v=16';
+import { FONTS } from './shell.js?v=16';
 
 const doc = document.documentElement;
 const ROOT = doc.dataset.root || '';
@@ -78,7 +78,10 @@ function cell(m, p, linked = true, opt = {}) {
     el.href = projectUrl(p.slug);
     el.setAttribute('aria-label', `${p.title}, ${kind(p)}`);
   }
-  el.append(frame(m));
+  const f = frame(m);
+  // framing chosen in Studio: which part of the shot stays visible when the tile crops it
+  if (opt.fx != null || opt.fy != null) f.firstElementChild.style.objectPosition = `${opt.fx ?? 50}% ${opt.fy ?? 50}%`;
+  el.append(f);
   if (linked) el.append(h(`<span class="label"><span>${esc(p.title)}</span><i>${esc(kind(p))}</i></span>`));
   // no size = automatic (desktop treats it as M; phones pick full width or half by shape)
   return { el, ratio: +opt.r || m.ratio || 16 / 9, size: opt.s || '', br: !!opt.br };
@@ -178,10 +181,10 @@ function openReel(link) {
 
 /* ---------- pages ---------- */
 function home(site, main) {
-  const cells = (list, sized) => (list || []).map(({ p, m, s, r, br }) => {
+  const cells = (list, sized) => (list || []).map(({ p, m, s, r, br, fx, fy }) => {
     const pr = site.projects.find((x) => x.slug === p && !x.hidden);
     const media = pr?.media.find((x) => x.id === m);
-    return media ? cell(media, pr, true, sized ? { s, r, br } : { r }) : null;
+    return media ? cell(media, pr, true, sized ? { s, r, br, fx, fy } : { r, fx, fy }) : null;
   }).filter(Boolean);
   const desk = cells(site.home, true);
   // phones get their own order and sizes when set up in Studio, otherwise the desktop order with automatic sizes

@@ -101,7 +101,7 @@ h3 { font-size: 12px; font-weight: 400; color: var(--mute); margin: 18px 0 8px; 
 .fold { position: absolute; left: 0; right: 0; z-index: 2; border-top: 1px dashed rgba(255,255,255,.9); mix-blend-mode: difference; pointer-events: none; }
 .fold span { position: absolute; right: 8px; top: 3px; font-size: 10px; color: #fff; }
 .fold[hidden] { display: none; }
-.hw { display: flex; flex-direction: column; }
+.hw { position: relative; }
 .hw .row { display: flex; gap: inherit; }
 .ht { position: relative; min-width: 0; overflow: hidden; background: var(--soft); cursor: grab; touch-action: none; user-select: none; -webkit-user-select: none; outline: none; }
 .ht img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; pointer-events: none; }
@@ -118,7 +118,7 @@ h3 { font-size: 12px; font-weight: 400; color: var(--mute); margin: 18px 0 8px; 
 .ht.ghost .tt { opacity: 1; }
 body.dragging, body.dragging * { cursor: grabbing !important; }
 
-.insp { position: sticky; top: 84px; background: var(--card); border: 1px solid var(--line); border-radius: 4px; padding: 16px; }
+.insp { position: sticky; top: 84px; max-height: calc(100vh - 100px); overflow-y: auto; overscroll-behavior: contain; background: var(--card); border: 1px solid var(--line); border-radius: 4px; padding: 16px; }
 .insp h3 { margin: 18px 0 8px; }
 .ithumb { width: 100%; max-height: 180px; background: var(--soft); overflow: hidden; border-radius: 2px; margin: 0 auto; }
 .ithumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
@@ -180,3 +180,12 @@ body.dragging, body.dragging * { cursor: grabbing !important; }
 .hidecheck small { display: block; color: var(--mute); font-size: 12px; margin-top: 2px; }
 .hidecheck.on { border-color: var(--fg); }
 .seg.sizes button { padding: 7px 0; font-size: 13px; }
+
+/* framing: drag the visible part of the shot */
+.frameedit { position: relative; max-width: 100%; margin: 0 auto; overflow: hidden; border-radius: 2px; background: #000; cursor: grab; touch-action: none; user-select: none; }
+.frameedit img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: fill; display: block; pointer-events: none; }
+.frameedit .win { position: absolute; box-shadow: 0 0 0 999px rgba(15,15,14,.62); outline: 1px solid rgba(255,255,255,.9); pointer-events: none; }
+.frameedit.moving { cursor: grabbing; }
+.frameedit.static { cursor: default; }
+.frameedit.static .win { box-shadow: none; outline: none; }
+.fehint { margin: 6px 0 0; }

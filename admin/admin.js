@@ -1,8 +1,8 @@
 // Studio — content editor for the portfolio.
 // Edits content/site.json and media in the GitHub repository through the GitHub API.
 // Nothing is stored on a server: the access token lives only in this browser (localStorage).
-import { allShells, FONTS, V as STUDIO_V } from '../assets/shell.js?v=14';
-import { packGrid, renderRows, SIZES, SHAPES, PHONE_SIZES, deskSize } from '../assets/wall.js?v=14';
+import { allShells, FONTS, V as STUDIO_V } from '../assets/shell.js?v=16';
+import { packGrid, renderGrid, SIZES, SHAPES, PHONE_SIZES, deskSize } from '../assets/wall.js?v=16';
 
 const CFG_KEY = 'studio.cfg';
 const R2_KEY = 'studio.r2'; // video storage keys (Cloudflare R2) — kept only in this browser
@@ -545,7 +545,7 @@ function viewHome(wrap) {
   wrap.append(el);
   el.querySelectorAll('[data-view]').forEach((b) => (b.onclick = () => { S.homeView = b.dataset.view; render(); }));
   $('[data-shuffle]', el).onclick = () => { for (let i = list.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [list[i], list[j]] = [list[j], list[i]]; } update(); };
-  const makeOwn = () => { S.site.homePhone = home.map((t) => ({ p: t.p, m: t.m, ...(t.r ? { r: t.r } : {}) })); S.homeSel = null; render(); toast('The phone now has its own order and sizes.'); };
+  const makeOwn = () => { S.site.homePhone = home.map((t) => ({ p: t.p, m: t.m, ...(t.r ? { r: t.r } : {}), ...(t.fx != null ? { fx: t.fx, fy: t.fy } : {}) })); S.homeSel = null; render(); toast('The phone now has its own order and sizes.'); };
   const ownBtn = $('[data-own]', el); if (ownBtn) ownBtn.onclick = makeOwn;
   const unown = $('[data-unown]', el);
   if (unown) unown.onclick = () => { if (!confirm('Drop the phone layout? Phones will follow the desktop order again, with automatic sizes.')) return; delete S.site.homePhone; S.homeSel = null; render(); };
@@ -563,6 +563,7 @@ function viewHome(wrap) {
     const node = h(`<div class="ht" tabindex="0">
         <img src="${esc(mediaUrl(m.type === 'video' ? m.poster : m.src))}" alt="" draggable="false">
         <span class="tt"></span></div>`);
+    if (t.fx != null) $('img', node).style.objectPosition = `${t.fx}% ${t.fy ?? 50}%`;
     const c = {
       el: node, t, p, m,
       get ratio() { return +t.r || m.ratio || 16 / 9; },
@@ -586,7 +587,7 @@ function viewHome(wrap) {
       $('.tt', c.el).textContent = `${i + 1}  ${c.p.title}`;
     });
     hw.style.padding = hw.style.gap = `${seam * k}px`;
-    renderRows(hw, packGrid(cells, { W: vp.vw - seam * 2, seam, ...vp }), k);
+    renderGrid(hw, packGrid(cells, { W: vp.vw - seam * 2, seam, ...vp }), seam, k);
     // the header, footer and the fold, scaled like the page
     const pad = (phone ? 16 : 32) * k;
     sbar.style.cssText = `padding:${(phone ? 16 : 22) * k}px ${pad}px;font-size:${(phone ? 14 : 15) * k}px`;
@@ -638,7 +639,7 @@ function viewHome(wrap) {
       const r0 = node.getBoundingClientRect();
       const off = { x: e.clientX - r0.left, y: e.clientY - r0.top };
       let ghost = null, last = '', raf = 0, ev = null, calmUntil = 0;
-      node.setPointerCapture(e.pointerId);
+      try { node.setPointerCapture(e.pointerId); } catch {}
       const tick = () => {
         raf = 0;
         if (!ev || !ghost) return;
@@ -703,6 +704,43 @@ function viewHome(wrap) {
     };
   }
 
+  // framing: the whole shot with the part the tile shows; drag it to choose what stays visible
+  function framing(t, c) {
+    const box = $('.frameedit', insp), win = $('.win', box), hint = $('.fehint', insp);
+    const mr = c.m.ratio || 16 / 9, a = c.el.offsetWidth / Math.max(1, c.el.offsetHeight);
+    const vw = a < mr ? a / mr : 1, vh = a > mr ? mr / a : 1; // visible share of the shot
+    const cropped = vw < 0.99 || vh < 0.99;
+    const place = () => {
+      const fx = t.fx ?? 50, fy = t.fy ?? 50;
+      win.style.cssText = `left:${(1 - vw) * fx}%;top:${(1 - vh) * fy}%;width:${vw * 100}%;height:${vh * 100}%`;
+    };
+    place();
+    box.classList.toggle('static', !cropped);
+    hint.textContent = cropped
+      ? (vw < 1 ? 'Drag the bright area sideways' : 'Drag the bright area up or down') + ' to choose what stays visible. Double-click to centre.'
+      : 'The whole frame is visible here — nothing is cut off.';
+    if (!cropped) return;
+    const apply = () => { $('img', c.el).style.objectPosition = `${t.fx ?? 50}% ${t.fy ?? 50}%`; place(); };
+    const at = (ev) => {
+      const r = box.getBoundingClientRect();
+      const px = (ev.clientX - r.left) / r.width, py = (ev.clientY - r.top) / r.height;
+      if (vw < 1) t.fx = Math.round(Math.min(1, Math.max(0, (px - vw / 2) / (1 - vw))) * 100);
+      if (vh < 1) t.fy = Math.round(Math.min(1, Math.max(0, (py - vh / 2) / (1 - vh))) * 100);
+      if (t.fx == null) t.fx = 50;
+      if (t.fy == null) t.fy = 50;
+      apply();
+    };
+    box.onpointerdown = (ev) => {
+      ev.preventDefault();
+      try { box.setPointerCapture(ev.pointerId); } catch {}
+      box.classList.add('moving');
+      at(ev);
+      box.onpointermove = at;
+      box.onpointerup = box.onpointercancel = () => { box.onpointermove = null; box.classList.remove('moving'); status(); };
+    };
+    box.ondblclick = () => { delete t.fx; delete t.fy; apply(); status(); };
+  }
+
   function inspector() {
     const t = S.homeSel;
     if (!editable) {
@@ -727,26 +765,29 @@ function viewHome(wrap) {
         <p class="hint">Drag tiles to put them in order — the others make room as you move.</p>
         <p class="hint">${phone
           ? 'On phones a size is a share of the screen width: ⅓, ½ or Full. Shots you hide here stay on the desktop.'
-          : 'Each shot has a width: ¼, ⅓, ½, ⅔, ¾ or Full. Shots fill a row left to right until it is full. <b>Auto</b> shots stretch to close a row; shots with a set width keep it exactly.'}</p>${tray}`;
+          : 'Each shot is exactly the width you set (¼ … Full) and the shape of its frame. Shots drop in order into the highest free spot, so a tall shot can sit next to a stack of short ones. Where a column ends short, the shot above it is extended (trimmed) so there are no empty holes.'}</p>${tray}`;
       bindTray();
       return;
     }
     const c = tiles.get(t), i = list.indexOf(t);
     insp.innerHTML = `
-      <div class="ithumb" style="aspect-ratio:${c.ratio}"><img src="${esc(mediaUrl(c.m.type === 'video' ? c.m.poster : c.m.src))}" alt=""></div>
+      <div class="frameedit" style="aspect-ratio:${c.m.ratio || 1.78};width:min(100%, ${Math.round(190 * (c.m.ratio || 1.78))}px)">
+        <img src="${esc(mediaUrl(c.m.type === 'video' ? c.m.poster : c.m.src))}" alt="" draggable="false"><div class="win"></div></div>
+      <p class="hint fehint"></p>
       <p class="ititle"><b>${esc(c.p.title)}</b><span>${i + 1} of ${list.length}${c.m.type === 'video' ? ' · clip' : ' · still'}</span></p>
       <h3>${phone ? 'Width on phones' : 'Width'}</h3>
       <div class="seg full sizes">${(phone ? PHONE_SIZES : SIZES).map(([key, l]) => `<button data-s="${key}" aria-pressed="${(phone ? t.s || '' : deskSize(t.s || '')) === key}" title="${key ? `${l} of the screen width` : 'Automatic, by the shot’s shape'}">${l}</button>`).join('')}</div>
-      <p class="hint" style="margin-top:6px">${phone ? 'Share of the screen width.' : 'Share of the screen width. The widest shot in a row keeps its full frame; the others are trimmed top and bottom to match its height.'}</p>
+      <p class="hint" style="margin-top:6px">${phone ? 'Share of the screen width.' : 'Share of the screen width. The height follows the shape below, so the tile is exactly this size.'}</p>
       <h3>Shape on the homepage</h3>
       <div class="shapes">${SHAPES.map(([key, l]) => `<button data-r="${key}" aria-pressed="${(t.r || '') === key}"><i style="aspect-ratio:${key || c.m.ratio || 1.78}"></i>${l}</button>`).join('')}</div>
-      <label class="check"><input type="checkbox" data-br ${t.br ? 'checked' : ''}> Start a new row with this shot</label>
+      <label class="check"><input type="checkbox" data-br ${t.br ? 'checked' : ''}> Start below everything above</label>
       <h3>Position</h3>
       <div class="seg full"><button data-mv="first" title="Move to the start">First</button><button data-mv="-1" title="Earlier (← key)">←</button><button data-mv="1" title="Later (→ key)">→</button><button data-mv="last" title="Move to the end">Last</button></div>
       <p style="margin-top:22px;display:flex;justify-content:space-between">
         <button class="btn quiet" data-desel>Done</button>
         <button class="btn quiet danger" data-rm>${phone ? 'Hide on phones' : 'Remove from homepage'}</button></p>${tray}`;
     bindTray();
+    framing(t, c);
     insp.querySelectorAll('[data-s]').forEach((b) => (b.onclick = () => { if (!b.dataset.s) delete t.s; else t.s = b.dataset.s; update(); }));
     insp.querySelectorAll('[data-r]').forEach((b) => (b.onclick = () => { if (!b.dataset.r) delete t.r; else t.r = b.dataset.r; update(); }));
     $('[data-br]', insp).onchange = (e) => { if (e.target.checked) t.br = true; else delete t.br; update(); };
