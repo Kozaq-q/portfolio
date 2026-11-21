@@ -8,7 +8,7 @@
     "bio": "Cinematographer based in Poland, working on short films, documentaries and music videos.\n\nAvailable for projects in Poland and abroad.",
     "description": "Cinematographer",
     "siteUrl": "https://pawelkozak.net",
-    "theme": "dark",
+    "theme": "light",
     "repo": {
       "owner": "Kozaq-q",
       "name": "portfolio",
@@ -19,7 +19,8 @@
       "src": "media/about/mwqe6mpthpux-portrait.webp",
       "ratio": 0.9276
     },
-    "mediaBase": "https://media.pawelkozak.net"
+    "mediaBase": "https://media.pawelkozak.net",
+    "hidden": false
   },
   "projects": [
     {
