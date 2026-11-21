@@ -1,5 +1,5 @@
-import { mountWall, PHONE } from './wall.js?v=10';
-import { FONTS } from './shell.js?v=10';
+import { mountWall, PHONE } from './wall.js?v=11';
+import { FONTS } from './shell.js?v=11';
 
 const doc = document.documentElement;
 const ROOT = doc.dataset.root || '';
@@ -78,7 +78,8 @@ function cell(m, p, linked = true, opt = {}) {
   }
   el.append(frame(m));
   if (linked) el.append(h(`<span class="label"><span>${esc(p.title)}</span><i>${esc(kind(p))}</i></span>`));
-  return { el, ratio: +opt.r || m.ratio || 16 / 9, size: opt.s || 'm', br: !!opt.br };
+  // no size = automatic (desktop treats it as M; phones pick full width or half by shape)
+  return { el, ratio: +opt.r || m.ratio || 16 / 9, size: opt.s || '', br: !!opt.br };
 }
 
 /* ---------- header + overlays ---------- */
