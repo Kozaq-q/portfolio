@@ -24,6 +24,48 @@
   },
   "projects": [
     {
+      "slug": "fromtheshore",
+      "title": "From the shore",
+      "type": "Short film",
+      "year": 2025,
+      "crew": [
+        {
+          "role": "Director",
+          "name": "Adelina Borets"
+        },
+        {
+          "role": "Cinematographer",
+          "name": "Paweł Kozak"
+        }
+      ],
+      "description": "",
+      "festivals": [],
+      "film": "https://player.pl/filmy-online,3/od-brzegu,10923970",
+      "media": [
+        {
+          "id": "mwqjvt4cdrs7",
+          "type": "video",
+          "src": "r2:media/fromtheshore/mwqjvsz4iz2u-bracia1-portfolio.mov",
+          "poster": "media/fromtheshore/mwqjvsz4iz2u-bracia1-portfolio-poster.webp",
+          "ratio": 1.8963
+        },
+        {
+          "id": "mwqjvxxa66qk",
+          "type": "video",
+          "src": "r2:media/fromtheshore/mwqjvxsqicka-bracia2-portfolio.mov",
+          "poster": "media/fromtheshore/mwqjvxsqicka-bracia2-portfolio-poster.webp",
+          "ratio": 1.8963
+        },
+        {
+          "id": "mwqjvy1923ti",
+          "type": "video",
+          "src": "r2:media/fromtheshore/mwqjvxxa6r1d-bracia3-portfolio.mov",
+          "poster": "media/fromtheshore/mwqjvxxa6r1d-bracia3-portfolio-poster.webp",
+          "ratio": 1.8963
+        }
+      ]
+    },
+    {
       "slug": "profundum",
       "title": "Profundum",
       "type": "Fashion film",
@@ -461,6 +503,18 @@
     {
       "p": "after-the-rain",
       "m": "p5-4"
+    },
+    {
+      "p": "fromtheshore",
+      "m": "mwqjvt4cdrs7"
+    },
+    {
+      "p": "fromtheshore",
+      "m": "mwqjvxxa66qk"
+    },
+    {
+      "p": "fromtheshore",
+      "m": "mwqjvy1923ti"
     }
   ],
   "homePhone": [
@@ -541,6 +595,18 @@
     {
       "p": "after-the-rain",
       "m": "p5-4"
+    },
+    {
+      "p": "fromtheshore",
+      "m": "mwqjvt4cdrs7"
+    },
+    {
+      "p": "fromtheshore",
+      "m": "mwqjvxxa66qk"
+    },
+    {
+      "p": "fromtheshore",
+      "m": "mwqjvy1923ti"
     }
   ]
 }
