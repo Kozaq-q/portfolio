@@ -1,8 +1,8 @@
 // Studio — content editor for the portfolio.
 // Edits content/site.json and media in the GitHub repository through the GitHub API.
 // Nothing is stored on a server: the access token lives only in this browser (localStorage).
-import { allShells, FONTS, V as STUDIO_V } from '../assets/shell.js?v=17';
-import { packGrid, renderGrid, SHAPES, PRESETS, sizePct } from '../assets/wall.js?v=17';
+import { allShells, FONTS, V as STUDIO_V } from '../assets/shell.js?v=18';
+import { packGrid, renderGrid, SHAPES, PRESETS, sizePct, cropRect, croppedRatio, applyCrop } from '../assets/wall.js?v=18';
 
 const CFG_KEY = 'studio.cfg';
 const R2_KEY = 'studio.r2'; // video storage keys (Cloudflare R2) — kept only in this browser
@@ -545,7 +545,7 @@ function viewHome(wrap) {
   wrap.append(el);
   el.querySelectorAll('[data-view]').forEach((b) => (b.onclick = () => { S.homeView = b.dataset.view; render(); }));
   $('[data-shuffle]', el).onclick = () => { for (let i = list.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [list[i], list[j]] = [list[j], list[i]]; } update(); };
-  const makeOwn = () => { S.site.homePhone = home.map((t) => ({ p: t.p, m: t.m, ...(t.r ? { r: t.r } : {}), ...(t.fx != null ? { fx: t.fx, fy: t.fy } : {}) })); S.homeSel = null; render(); toast('The phone now has its own order and sizes.'); };
+  const makeOwn = () => { S.site.homePhone = home.map((t) => ({ p: t.p, m: t.m, ...(t.r ? { r: t.r } : {}), ...(t.fx != null ? { fx: t.fx, fy: t.fy } : {}), ...(t.crop ? { crop: [...t.crop] } : {}) })); S.homeSel = null; render(); toast('The phone now has its own order and sizes.'); };
   const ownBtn = $('[data-own]', el); if (ownBtn) ownBtn.onclick = makeOwn;
   const unown = $('[data-unown]', el);
   if (unown) unown.onclick = () => { if (!confirm('Drop the phone layout? Phones will follow the desktop order again, with automatic sizes.')) return; delete S.site.homePhone; S.homeSel = null; render(); };
@@ -563,10 +563,9 @@ function viewHome(wrap) {
     const node = h(`<div class="ht" tabindex="0">
         <img src="${esc(mediaUrl(m.type === 'video' ? m.poster : m.src))}" alt="" draggable="false">
         <span class="tt"></span></div>`);
-    if (t.fx != null) $('img', node).style.objectPosition = `${t.fx}% ${t.fy ?? 50}%`;
     const c = {
       el: node, t, p, m,
-      get ratio() { return +t.r || m.ratio || 16 / 9; },
+      get ratio() { return croppedRatio(cropRect(t, m.ratio || 16 / 9), m.ratio || 16 / 9); },
       get size() { return sized ? t.s || '' : ''; },
       get w() { return sized ? t.w : undefined; },
       get br() { return sized && !!t.br; },
@@ -585,6 +584,7 @@ function viewHome(wrap) {
     const cells = list.filter((t) => !S.site.projects.find((x) => x.slug === t.p)?.hidden).map(tileFor);
     cells.forEach((c, i) => {
       c.el.classList.toggle('sel', c.t === S.homeSel);
+      applyCrop($('img', c.el), cropRect(c.t, c.m.ratio || 16 / 9));
       $('.tt', c.el).textContent = `${i + 1}  ${c.p.title}`;
     });
     hw.style.padding = hw.style.gap = `${seam * k}px`;
@@ -705,41 +705,68 @@ function viewHome(wrap) {
     };
   }
 
-  // framing: the whole shot with the part the tile shows; drag it to choose what stays visible
+  // crop editor: the whole shot with the part the tile shows. Drag the edges or corners to crop
+  // freely, drag inside to move the crop, double-click for the whole frame again.
   function framing(t, c) {
-    const box = $('.frameedit', insp), win = $('.win', box), hint = $('.fehint', insp);
-    const mr = c.m.ratio || 16 / 9, a = c.el.offsetWidth / Math.max(1, c.el.offsetHeight);
-    const vw = a < mr ? a / mr : 1, vh = a > mr ? mr / a : 1; // visible share of the shot
-    const cropped = vw < 0.99 || vh < 0.99;
+    const box = $('.frameedit', insp), win = $('.win', box), hint = $('.fehint', insp), label = $('[data-cropval]', insp);
+    const mr = c.m.ratio || 16 / 9, MIN = 0.08;
+    let rect = cropRect(t, mr) || [0, 0, 1, 1];
+    const isFull = (r) => r[0] < 0.002 && r[1] < 0.002 && r[2] > 0.998 && r[3] > 0.998;
     const place = () => {
-      const fx = t.fx ?? 50, fy = t.fy ?? 50;
-      win.style.cssText = `left:${(1 - vw) * fx}%;top:${(1 - vh) * fy}%;width:${vw * 100}%;height:${vh * 100}%`;
+      win.style.cssText = `left:${rect[0] * 100}%;top:${rect[1] * 100}%;width:${rect[2] * 100}%;height:${rect[3] * 100}%`;
+      const full = isFull(rect);
+      box.classList.toggle('full', full);
+      const r = croppedRatio(full ? null : rect, mr);
+      label.textContent = full ? 'whole frame' : `${r >= 1 ? r.toFixed(2) + ' : 1' : '1 : ' + (1 / r).toFixed(2)}`;
+      insp.querySelectorAll('[data-r]').forEach((b) => b.setAttribute('aria-pressed', b.dataset.r ? !full && Math.abs(+b.dataset.r - r) / r < 0.015 : full));
+    };
+    const commit = (r) => {
+      rect = r;
+      if (isFull(r)) delete t.crop; else t.crop = r.map((v) => +v.toFixed(4));
+      delete t.r; delete t.fx; delete t.fy;
+      place(); soon(lay);
     };
     place();
-    box.classList.toggle('static', !cropped);
-    hint.textContent = cropped
-      ? (vw < 1 ? 'Drag the bright area sideways' : 'Drag the bright area up or down') + ' to choose what stays visible. Double-click to centre.'
-      : 'The whole frame is visible here — nothing is cut off.';
-    if (!cropped) return;
-    const apply = () => { $('img', c.el).style.objectPosition = `${t.fx ?? 50}% ${t.fy ?? 50}%`; place(); };
-    const at = (ev) => {
-      const r = box.getBoundingClientRect();
-      const px = (ev.clientX - r.left) / r.width, py = (ev.clientY - r.top) / r.height;
-      if (vw < 1) t.fx = Math.round(Math.min(1, Math.max(0, (px - vw / 2) / (1 - vw))) * 100);
-      if (vh < 1) t.fy = Math.round(Math.min(1, Math.max(0, (py - vh / 2) / (1 - vh))) * 100);
-      if (t.fx == null) t.fx = 50;
-      if (t.fy == null) t.fy = 50;
-      apply();
-    };
+    hint.textContent = 'Drag the edges or corners to crop, drag inside to move it. Double-click shows the whole frame.';
     box.onpointerdown = (ev) => {
       ev.preventDefault();
       try { box.setPointerCapture(ev.pointerId); } catch {}
+      const b = box.getBoundingClientRect();
+      const h = ev.target.dataset?.h || (ev.target === win ? 'move' : 'jump');
+      const [x0, y0, w0, h0] = rect, px0 = ev.clientX, py0 = ev.clientY;
       box.classList.add('moving');
-      at(ev);
-      box.onpointermove = at;
+      const clamp = (v, lo, hi) => Math.min(hi, Math.max(lo, v));
+      const onMove = (e) => {
+        const dx = (e.clientX - px0) / b.width, dy = (e.clientY - py0) / b.height;
+        let [x, y, w, hh] = [x0, y0, w0, h0];
+        if (h === 'move' || h === 'jump') {
+          const cx = h === 'jump' ? (e.clientX - b.left) / b.width - w / 2 : x0 + dx;
+          const cy = h === 'jump' ? (e.clientY - b.top) / b.height - hh / 2 : y0 + dy;
+          x = clamp(cx, 0, 1 - w); y = clamp(cy, 0, 1 - hh);
+        } else {
+          if (h.includes('e')) w = clamp(w0 + dx, MIN, 1 - x0);
+          if (h.includes('w')) { x = clamp(x0 + dx, 0, x0 + w0 - MIN); w = x0 + w0 - x; }
+          if (h.includes('s')) hh = clamp(h0 + dy, MIN, 1 - y0);
+          if (h.includes('n')) { y = clamp(y0 + dy, 0, y0 + h0 - MIN); hh = y0 + h0 - y; }
+        }
+        commit([x, y, w, hh]);
+      };
+      onMove(ev);
+      box.onpointermove = onMove;
       box.onpointerup = box.onpointercancel = () => { box.onpointermove = null; box.classList.remove('moving'); status(); };
     };
-    box.ondblclick = () => { delete t.fx; delete t.fy; apply(); status(); };
+    box.ondblclick = () => { commit([0, 0, 1, 1]); status(); };
+    // quick shapes: the largest crop of that shape around the current centre
+    insp.querySelectorAll('[data-r]').forEach((btn) => (btn.onclick = () => {
+      const R = +btn.dataset.r;
+      if (!R) { commit([0, 0, 1, 1]); status(); return; }
+      const f = R / mr; // crop width / crop height, in fractions of the shot
+      let w = 1, hh = 1;
+      if (f < 1) w = f; else hh = 1 / f;
+      const cx = rect[0] + rect[2] / 2, cy = rect[1] + rect[3] / 2;
+      const x = Math.min(1 - w, Math.max(0, cx - w / 2)), y = Math.min(1 - hh, Math.max(0, cy - hh / 2));
+      commit([x, y, w, hh]); status();
+    }));
   }
 
   function inspector() {
@@ -771,15 +798,17 @@ function viewHome(wrap) {
     const c = tiles.get(t), i = list.indexOf(t);
     insp.innerHTML = `
       <div class="frameedit" style="aspect-ratio:${c.m.ratio || 1.78};width:min(100%, ${Math.round(190 * (c.m.ratio || 1.78))}px)">
-        <img src="${esc(mediaUrl(c.m.type === 'video' ? c.m.poster : c.m.src))}" alt="" draggable="false"><div class="win"></div></div>
+        <img src="${esc(mediaUrl(c.m.type === 'video' ? c.m.poster : c.m.src))}" alt="" draggable="false">
+        <div class="win">${['n', 's', 'e', 'w', 'ne', 'nw', 'se', 'sw'].map((k) => `<i data-h="${k}" class="hd ${k}"></i>`).join('')}</div></div>
       <p class="hint fehint"></p>
       <p class="ititle"><b>${esc(c.p.title)}</b><span>${i + 1} of ${list.length}${c.m.type === 'video' ? ' · clip' : ' · still'}</span></p>
       <h3>${phone ? 'Size on phones' : 'Size'} <span class="szval" data-szval></span></h3>
       <input type="range" class="szrange" data-sz min="10" max="100" step="1">
       <div class="seg full sizes">${PRESETS.map(([key, l]) => `<button data-p="${key}" title="${key ? `${l} of the page width` : 'Automatic, by the shot’s shape'}">${l}</button>`).join('')}</div>
-      <p class="hint" style="margin-top:6px">Bigger or smaller, the shot keeps its own proportions — nothing is cut off unless you pick a shape below.</p>
-      <h3>Shape on the homepage</h3>
-      <div class="shapes">${SHAPES.map(([key, l]) => `<button data-r="${key}" aria-pressed="${(t.r || '') === key}"><i style="aspect-ratio:${key || c.m.ratio || 1.78}"></i>${l}</button>`).join('')}</div>
+      <p class="hint" style="margin-top:6px">Bigger or smaller, the shot keeps its proportions — it is cut only where you crop it.</p>
+      <h3>Crop <span class="szval" data-cropval></span></h3>
+      <p class="hint" style="margin:0 0 8px">Free crop in the picture at the top, or a quick shape:</p>
+      <div class="shapes">${SHAPES.map(([key, l]) => `<button data-r="${key}"><i style="aspect-ratio:${key || c.m.ratio || 1.78}"></i>${key ? l : 'Whole frame'}</button>`).join('')}</div>
       <label class="check"><input type="checkbox" data-br ${t.br ? 'checked' : ''}> Start below everything above</label>
       <h3>Position</h3>
       <div class="seg full"><button data-mv="first" title="Move to the start">First</button><button data-mv="-1" title="Earlier (← key)">←</button><button data-mv="1" title="Later (→ key)">→</button><button data-mv="last" title="Move to the end">Last</button></div>
@@ -800,7 +829,6 @@ function viewHome(wrap) {
     range.oninput = () => { t.w = +range.value; delete t.s; lay(); showSize(); };
     range.onchange = () => { status(); framing(t, c); };
     insp.querySelectorAll('[data-p]').forEach((b) => (b.onclick = () => { delete t.s; if (b.dataset.p) t.w = +b.dataset.p; else delete t.w; update(); }));
-    insp.querySelectorAll('[data-r]').forEach((b) => (b.onclick = () => { if (!b.dataset.r) delete t.r; else t.r = b.dataset.r; update(); }));
     $('[data-br]', insp).onchange = (e) => { if (e.target.checked) t.br = true; else delete t.br; update(); };
     insp.querySelectorAll('[data-mv]').forEach((b) => (b.onclick = () => {
       const v = b.dataset.mv;

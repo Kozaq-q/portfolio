@@ -9,6 +9,34 @@
 // crop a tile to a fixed shape on the homepage ('' = the shot's own shape)
 export const SHAPES = [['', 'Original'], ['2.39', '2.39 : 1'], ['1.78', '16 : 9'], ['1.33', '4 : 3'], ['1', '1 : 1'], ['0.8', '4 : 5']];
 
+// Crop of a homepage tile: a rectangle [x, y, w, h] in fractions of the whole shot.
+// Saved as `crop`; older tiles may carry a preset shape `r` with a framing point fx/fy (0–100).
+export function cropRect(t, mr) {
+  if (Array.isArray(t.crop) && t.crop.length === 4) {
+    const [x, y, w, h] = t.crop.map(Number);
+    if (w > 0 && h > 0) return [x, y, w, h];
+  }
+  const r = +t.r;
+  if (!r || !mr) return null;
+  const vw = r < mr ? r / mr : 1, vh = r > mr ? mr / r : 1;
+  return [(1 - vw) * (t.fx ?? 50) / 100, (1 - vh) * (t.fy ?? 50) / 100, vw, vh];
+}
+// tile proportions after cropping
+export const croppedRatio = (rect, mr) => (rect ? (mr * rect[2]) / rect[3] : mr);
+// show only the cropped part of the shot inside its tile (no distortion: the shot keeps its ratio)
+export function applyCrop(media, rect) {
+  const st = media.style;
+  if (!rect) { st.inset = ''; st.left = st.top = st.width = st.height = st.objectFit = ''; return; }
+  const [x, y, w, h] = rect;
+  st.inset = 'auto';
+  st.left = `${(-x / w) * 100}%`;
+  st.top = `${(-y / h) * 100}%`;
+  st.width = `${100 / w}%`;
+  st.height = `${100 / h}%`;
+  st.objectFit = 'fill';
+  st.objectPosition = '';
+}
+
 export const PHONE = 860; // widths at or below this use the phone layout
 
 // homepage: free masonry.

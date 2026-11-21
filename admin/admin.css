@@ -181,13 +181,17 @@ body.dragging, body.dragging * { cursor: grabbing !important; }
 .hidecheck.on { border-color: var(--fg); }
 .seg.sizes button { padding: 7px 0; font-size: 13px; }
 
-/* framing: drag the visible part of the shot */
-.frameedit { position: relative; max-width: 100%; margin: 0 auto; overflow: hidden; border-radius: 2px; background: #000; cursor: grab; touch-action: none; user-select: none; }
-.frameedit img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: fill; display: block; pointer-events: none; }
-.frameedit .win { position: absolute; box-shadow: 0 0 0 999px rgba(15,15,14,.62); outline: 1px solid rgba(255,255,255,.9); pointer-events: none; }
-.frameedit.moving { cursor: grabbing; }
-.frameedit.static { cursor: default; }
-.frameedit.static .win { box-shadow: none; outline: none; }
+/* crop editor */
+.frameedit { position: relative; max-width: 100%; margin: 0 auto; border-radius: 2px; background: #000; touch-action: none; user-select: none; cursor: crosshair; }
+.frameedit img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: fill; display: block; pointer-events: none; border-radius: 2px; }
+.frameedit .win { position: absolute; box-shadow: 0 0 0 999px rgba(15,15,14,.62); outline: 1px solid rgba(255,255,255,.95); cursor: move; }
+.frameedit { overflow: hidden; }
+.frameedit .hd { position: absolute; width: 12px; height: 12px; margin: -6px 0 0 -6px; background: #fff; border: 1px solid #111; border-radius: 1px; }
+.frameedit .hd.n { left: 50%; top: 0; cursor: ns-resize; } .frameedit .hd.s { left: 50%; top: 100%; cursor: ns-resize; }
+.frameedit .hd.e { left: 100%; top: 50%; cursor: ew-resize; } .frameedit .hd.w { left: 0; top: 50%; cursor: ew-resize; }
+.frameedit .hd.ne { left: 100%; top: 0; cursor: nesw-resize; } .frameedit .hd.sw { left: 0; top: 100%; cursor: nesw-resize; }
+.frameedit .hd.nw { left: 0; top: 0; cursor: nwse-resize; } .frameedit .hd.se { left: 100%; top: 100%; cursor: nwse-resize; }
+.frameedit.full .win { box-shadow: none; }
 .fehint { margin: 6px 0 0; }
 
 /* size slider */
