@@ -1,5 +1,5 @@
-import { mountWall, PHONE, cropRect, croppedRatio, applyCrop } from './wall.js?v=26';
-import { FONTS } from './shell.js?v=26';
+import { mountWall, PHONE, cropRect, croppedRatio, applyCrop } from './wall.js?v=27';
+import { FONTS } from './shell.js?v=27';
 
 const doc = document.documentElement;
 const ROOT = doc.dataset.root || '';
@@ -93,7 +93,7 @@ function chrome(site) {
   const s = site.settings;
   const bar = h(`
     <header class="bar">
-      <a class="name" href="${HOME}">${esc(s.name)}${s.role ? `<small>${esc(s.role)}</small>` : ''}</a>
+      <a class="name" href="${HOME}"><span>${esc(s.name)}</span>${s.role ? `<small>${esc(s.role)}</small>` : ''}</a>
       <nav>
         <button data-open="index">Projects</button>
         ${s.showreel ? '<button data-reel>Showreel</button>' : ''}
@@ -168,6 +168,17 @@ function chrome(site) {
   for (const b of [...bar.querySelectorAll('[data-reel]'), ...info.querySelectorAll('[data-reel]')]) {
     b.addEventListener('click', (e) => { e.preventDefault(); openReel(s.showreel); });
   }
+  // the role under the name is never wider than the name itself
+  const fitRole = () => {
+    const nm = bar.querySelector('.name span'), rl = bar.querySelector('.name small');
+    if (!nm || !rl) return;
+    rl.style.fontSize = '10px';
+    const k = nm.getBoundingClientRect().width / Math.max(1, rl.getBoundingClientRect().width);
+    rl.style.fontSize = `${Math.min(10, 10 * k * 0.99)}px`;
+  };
+  requestAnimationFrame(fitRole);
+  document.fonts?.ready.then(fitRole);
+  addEventListener('resize', fitRole);
   return [bar, index, info];
 }
 
