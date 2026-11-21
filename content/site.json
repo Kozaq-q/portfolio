@@ -370,6 +370,10 @@
   ],
   "home": [
     {
+      "p": "project",
+      "m": "mwqfmi59if31"
+    },
+    {
       "p": "low-tide",
       "m": "p1-1"
     },
@@ -432,10 +436,6 @@
     {
       "p": "after-the-rain",
       "m": "p5-4"
-    },
-    {
-      "p": "project",
-      "m": "mwqfmi59if31"
     }
   ]
 }
