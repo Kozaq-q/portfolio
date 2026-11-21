@@ -95,6 +95,53 @@ export function packGrid(items, { W, seam, vw, vh }) {
   return { height, boxes };
 }
 
+// homepage, free canvas (optional): every tile stands where you put it.
+// pos = [x, y] as fractions of the page width (one unit = width + one seam), so the canvas scales
+// with the screen. When tiles would overlap, the lower one is pushed down — never pulled up — so
+// gaps stay only where you leave them. Phones don't get the canvas: they flow the tiles in
+// reading order (top to bottom, left to right), or use their own phone layout.
+export const REF = { W: 1434, seam: 3, vw: 1440, vh: 900 }; // the desktop the canvas is drawn on
+
+export function packCanvas(items, { W, seam, vw, vh }, fixed = null) {
+  if (vw <= PHONE) {
+    const key = (c) => (c.pos ? c.pos[1] * 1e4 + c.pos[0] : Infinity);
+    return packGrid([...items].sort((a, b) => key(a) - key(b)), { W, seam, vw, vh });
+  }
+  const U = W + seam;
+  const boxes = items.map((c) => {
+    const w = Math.min(W, (sizePct(c, false) / 100) * U - seam);
+    const h = w / c.ratio;
+    const p = c.pos;
+    return { item: c, w, h, x: p ? Math.min(W - w, Math.max(0, p[0] * U)) : null, y: p ? Math.max(0, p[1] * U) : null };
+  });
+  return settle(boxes, fixed, seam, W);
+}
+
+// push overlapping tiles down (the fixed one — the tile being dragged — keeps its place)
+export function settle(boxes, fixed, seam, W) {
+  const TOL = 3; // ignore overlaps of a few pixels (rounding between screen sizes)
+  const hits = (a, b) => a.x < b.x + b.w + seam - TOL && b.x < a.x + a.w + seam - TOL && a.y < b.y + b.h + seam - TOL && b.y < a.y + a.h + seam - TOL;
+  const placed = [];
+  const order = boxes.filter((b) => b.y != null).sort((a, b) => a.y - b.y || a.x - b.x);
+  const f = fixed && order.find((b) => b.item === fixed);
+  if (f) { order.splice(order.indexOf(f), 1); order.unshift(f); }
+  for (const b of order) {
+    for (let g = 0; g < 400; g++) {
+      const hit = placed.filter((p) => hits(p, b));
+      if (!hit.length) break;
+      b.y = Math.max(...hit.map((p) => p.y + p.h + seam));
+    }
+    placed.push(b);
+  }
+  // tiles without a place yet (just added): a row below everything
+  let y = placed.reduce((m, b) => Math.max(m, b.y + b.h + seam), 0), x = 0, rowH = 0;
+  for (const b of boxes.filter((q) => q.y == null)) {
+    if (x > 0 && x + b.w > W + 0.5) { x = 0; y += rowH + seam; rowH = 0; }
+    b.x = x; b.y = y; x += b.w + seam; rowH = Math.max(rowH, b.h);
+  }
+  return { height: boxes.reduce((m, b) => Math.max(m, b.y + b.h), 0), boxes };
+}
+
 // Places a packGrid result. pad = gap around the wall; k scales everything (Studio preview).
 export function renderGrid(el, grid, seam, k = 1) {
   el.style.position = 'relative';
@@ -175,7 +222,7 @@ export function renderRows(el, rows, k = 1) {
 
 // Lays rows of { el, ratio, size, br } into a container and keeps them fitted on resize.
 // cells can also be a function (viewportWidth) => cells, e.g. a separate list for phones.
-export function mountWall(el, cells, { grid = false } = {}) {
+export function mountWall(el, cells, { grid = false, canvas = false } = {}) {
   let lastKey = '', lastList = null;
   const layout = () => {
     const seam = parseFloat(getComputedStyle(el).rowGap) || 3;
@@ -187,7 +234,7 @@ export function mountWall(el, cells, { grid = false } = {}) {
     const key = `${Math.round(W)}x${Math.round(vp.vh / 40)}x${list.length}${list === lastList}`; // ignore tiny height jitter (mobile URL bar)
     if ((key === lastKey && list === lastList) || W <= 0) return;
     lastKey = key; lastList = list;
-    if (grid) renderGrid(el, packGrid(list, { W, seam, ...vp }), seam);
+    if (grid) renderGrid(el, (canvas ? packCanvas : packGrid)(list, { W, seam, ...vp }), seam);
     else renderRows(el, packRows(list, { W, seam, ...vp }));
   };
   layout();

@@ -1,5 +1,5 @@
-import { mountWall, PHONE, cropRect, croppedRatio, applyCrop } from './wall.js?v=18';
-import { FONTS } from './shell.js?v=18';
+import { mountWall, PHONE, cropRect, croppedRatio, applyCrop } from './wall.js?v=19';
+import { FONTS } from './shell.js?v=19';
 
 const doc = document.documentElement;
 const ROOT = doc.dataset.root || '';
@@ -85,7 +85,7 @@ function cell(m, p, linked = true, opt = {}) {
   el.append(f);
   if (linked) el.append(h(`<span class="label"><span>${esc(p.title)}</span><i>${esc(kind(p))}</i></span>`));
   // no size = automatic (desktop treats it as M; phones pick full width or half by shape)
-  return { el, ratio: croppedRatio(rect, m.ratio || 16 / 9), size: opt.s || '', w: opt.w, br: !!opt.br };
+  return { el, ratio: croppedRatio(rect, m.ratio || 16 / 9), size: opt.s || '', w: opt.w, br: !!opt.br, pos: opt.pos };
 }
 
 /* ---------- header + overlays ---------- */
@@ -182,10 +182,10 @@ function openReel(link) {
 
 /* ---------- pages ---------- */
 function home(site, main) {
-  const cells = (list, sized) => (list || []).map(({ p, m, s, w, r, br, fx, fy, crop }) => {
+  const cells = (list, sized) => (list || []).map(({ p, m, s, w, r, br, fx, fy, crop, pos }) => {
     const pr = site.projects.find((x) => x.slug === p && !x.hidden);
     const media = pr?.media.find((x) => x.id === m);
-    return media ? cell(media, pr, true, sized ? { s, w, r, br, fx, fy, crop } : { r, fx, fy, crop }) : null;
+    return media ? cell(media, pr, true, sized ? { s, w, r, br, fx, fy, crop, pos } : { r, fx, fy, crop, pos }) : null;
   }).filter(Boolean);
   const desk = cells(site.home, true);
   // phones get their own order and sizes when set up in Studio, otherwise the desktop order with automatic sizes
@@ -194,7 +194,7 @@ function home(site, main) {
   const w = document.createElement('div');
   w.className = 'wall';
   main.append(w);
-  mountWall(w, items, { grid: true });
+  mountWall(w, items, { grid: true, canvas: !!site.homeCanvas });
 
   const s = site.settings;
   main.append(h(`

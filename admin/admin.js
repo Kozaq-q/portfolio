@@ -1,8 +1,8 @@
 // Studio — content editor for the portfolio.
 // Edits content/site.json and media in the GitHub repository through the GitHub API.
 // Nothing is stored on a server: the access token lives only in this browser (localStorage).
-import { allShells, FONTS, V as STUDIO_V } from '../assets/shell.js?v=18';
-import { packGrid, renderGrid, SHAPES, PRESETS, sizePct, cropRect, croppedRatio, applyCrop } from '../assets/wall.js?v=18';
+import { allShells, FONTS, V as STUDIO_V } from '../assets/shell.js?v=19';
+import { packGrid, packCanvas, renderGrid, REF, SHAPES, PRESETS, sizePct, cropRect, croppedRatio, applyCrop } from '../assets/wall.js?v=19';
 
 const CFG_KEY = 'studio.cfg';
 const R2_KEY = 'studio.r2'; // video storage keys (Cloudflare R2) — kept only in this browser
@@ -523,7 +523,8 @@ function viewHome(wrap) {
         <span class="seg" role="group" aria-label="Preview">
           <button data-view="desktop" aria-pressed="${!phone}">Desktop</button><button data-view="phone" aria-pressed="${phone}">Phone</button>
         </span>
-        <button class="btn" data-shuffle ${list.length < 2 || !editable ? 'disabled' : ''}>Shuffle</button>
+        ${phone ? '' : `<label class="canvastoggle" title="Put tiles exactly where you want them"><input type="checkbox" data-canvas ${S.site.homeCanvas ? 'checked' : ''}> Free canvas</label>`}
+        <button class="btn" data-shuffle ${list.length < 2 || !editable || (S.site.homeCanvas && !phone) ? 'disabled' : ''}>Shuffle</button>
         ${phone ? (own
           ? '<span class="pill">Own phone layout</span><button class="btn quiet" data-unown>Follow desktop again</button>'
           : '<button class="btn" data-own>Make a separate phone layout</button>') : ''}
@@ -544,6 +545,32 @@ function viewHome(wrap) {
     </div>`);
   wrap.append(el);
   el.querySelectorAll('[data-view]').forEach((b) => (b.onclick = () => { S.homeView = b.dataset.view; render(); }));
+  // free canvas on/off. Turning it on pins every tile exactly where the automatic layout has it now.
+  const cv = $('[data-canvas]', el);
+  if (cv) cv.onchange = () => {
+    if (cv.checked) {
+      const items = home.filter((t) => !S.site.projects.find((x) => x.slug === t.p)?.hidden).map((t) => {
+        const p = S.site.projects.find((x) => x.slug === t.p), m = p.media.find((x) => x.id === t.m), mr = m.ratio || 16 / 9;
+        return { t, ratio: croppedRatio(cropRect(t, mr), mr), size: t.s || '', w: t.w, br: t.br };
+      });
+      if (!items.every((c) => c.t.pos)) {
+        const U = REF.W + REF.seam;
+        for (const b of packGrid(items, REF).boxes) {
+          b.item.t.pos = [+(b.x / U).toFixed(5), +(b.y / U).toFixed(5)];
+          b.item.t.w = +(((b.w + REF.seam) / U) * 100).toFixed(3);
+          delete b.item.t.s;
+        }
+      }
+      S.site.homeCanvas = true;
+      toast('Free canvas is on: drag tiles anywhere. Nothing moved yet.', 5000);
+    } else {
+      // back to the automatic layout, in the order the canvas reads (top to bottom, left to right)
+      const key = (t) => (t.pos ? t.pos[1] * 1e4 + t.pos[0] : Infinity);
+      home.sort((a, b) => key(a) - key(b));
+      delete S.site.homeCanvas;
+    }
+    render();
+  };
   $('[data-shuffle]', el).onclick = () => { for (let i = list.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [list[i], list[j]] = [list[j], list[i]]; } update(); };
   const makeOwn = () => { S.site.homePhone = home.map((t) => ({ p: t.p, m: t.m, ...(t.r ? { r: t.r } : {}), ...(t.fx != null ? { fx: t.fx, fy: t.fy } : {}), ...(t.crop ? { crop: [...t.crop] } : {}) })); S.homeSel = null; render(); toast('The phone now has its own order and sizes.'); };
   const ownBtn = $('[data-own]', el); if (ownBtn) ownBtn.onclick = makeOwn;
@@ -568,6 +595,7 @@ function viewHome(wrap) {
       get ratio() { return croppedRatio(cropRect(t, m.ratio || 16 / 9), m.ratio || 16 / 9); },
       get size() { return sized ? t.s || '' : ''; },
       get w() { return sized ? t.w : undefined; },
+      get pos() { return list === home ? t.pos : undefined; },
       get br() { return sized && !!t.br; },
     };
     dragable(c);
@@ -576,7 +604,9 @@ function viewHome(wrap) {
   };
 
   let k = 1, vp;
-  const lay = () => {
+  const canvasOn = () => !!S.site.homeCanvas && list === home;
+  let lastGrid = null, lastU = 1;
+  const lay = (fixed = null) => {
     vp = phone ? { vw: 390, vh: 844 } : { vw: Math.max(1024, innerWidth), vh: Math.max(560, innerHeight) };
     const seam = phone ? 2 : 3;
     k = screen.clientWidth / vp.vw;
@@ -588,7 +618,10 @@ function viewHome(wrap) {
       $('.tt', c.el).textContent = `${i + 1}  ${c.p.title}`;
     });
     hw.style.padding = hw.style.gap = `${seam * k}px`;
-    renderGrid(hw, packGrid(cells, { W: vp.vw - seam * 2, seam, ...vp }), seam, k);
+    const opts = { W: vp.vw - seam * 2, seam, ...vp };
+    lastU = opts.W + seam;
+    lastGrid = canvasOn() ? packCanvas(cells, opts, fixed) : packGrid(cells, opts);
+    renderGrid(hw, lastGrid, seam, k);
     // the header, footer and the fold, scaled like the page
     const pad = (phone ? 16 : 32) * k;
     sbar.style.cssText = `padding:${(phone ? 16 : 22) * k}px ${pad}px;font-size:${(phone ? 14 : 15) * k}px`;
@@ -631,12 +664,65 @@ function viewHome(wrap) {
     if (quiet) { flip(lay); status(); } else update();
   };
 
+  // free canvas: the tile follows the pointer, snaps to page edges and neighbours, and tiles it
+  // lands on are pushed down. Release to keep it there.
+  function canvasDrag(c, e) {
+    const node = c.el;
+    try { node.setPointerCapture(e.pointerId); } catch {}
+    const seam = phone ? 2 : 3, W = lastU - seam;
+    const hr = hw.getBoundingClientRect();
+    const toV = (ev) => [(ev.clientX - hr.left) / k - seam, (ev.clientY - hr.top) / k - seam];
+    const me = lastGrid.boxes.find((b) => b.item === c);
+    const others = lastGrid.boxes.filter((b) => b !== me).map((b) => ({ ...b }));
+    const base = new Map(list.map((t) => [t, t.pos ? [...t.pos] : null]));
+    const [sx, sy] = toV(e), x0 = me.x, y0 = me.y, w = me.w, h = me.h;
+    let moved = false, ev = null, busy = false;
+    const SNAP = 14;
+    const snap = (v, cands) => { let best = v, d = SNAP; for (const q of cands) if (Math.abs(q - v) < d) { d = Math.abs(q - v); best = q; } return best; };
+    const step = () => {
+      busy = false;
+      if (!ev) return;
+      const [vx, vy] = toV(ev);
+      let x = x0 + vx - sx, y = y0 + vy - sy;
+      x = snap(x, [0, W - w, ...others.flatMap((b) => [b.x, b.x + b.w + seam, b.x + b.w - w, b.x - seam - w])]);
+      y = snap(y, [0, ...others.flatMap((b) => [b.y, b.y + b.h + seam, b.y + b.h - h, b.y - seam - h])]);
+      x = Math.min(W - w, Math.max(0, x)); y = Math.max(0, y);
+      list.forEach((t) => { if (base.get(t)) t.pos = [...base.get(t)]; });
+      c.t.pos = [x / lastU, y / lastU];
+      lay(c);
+    };
+    const onMove = (e2) => {
+      if (!moved && Math.hypot(e2.clientX - e.clientX, e2.clientY - e.clientY) < 5) return;
+      if (!moved) { moved = true; node.classList.add('freedrag'); document.body.classList.add('dragging'); }
+      ev = e2;
+      if (!busy) { busy = true; soon(step); }
+    };
+    const onUp = () => {
+      node.removeEventListener('pointermove', onMove);
+      node.removeEventListener('pointerup', onUp);
+      node.removeEventListener('pointercancel', onUp);
+      ev = null;
+      node.classList.remove('freedrag'); document.body.classList.remove('dragging');
+      if (moved) {
+        // keep the result: everyone's settled place becomes their saved place
+        for (const b of lastGrid.boxes) if (b.item.t && list.includes(b.item.t)) b.item.t.pos = [+(b.x / lastU).toFixed(5), +(b.y / lastU).toFixed(5)];
+        status();
+      }
+      S.homeSel = c.t;
+      lay(); inspector();
+    };
+    node.addEventListener('pointermove', onMove);
+    node.addEventListener('pointerup', onUp);
+    node.addEventListener('pointercancel', onUp);
+  }
+
   // drag with the mouse or a finger; the other tiles make room as you go
   function dragable(c) {
     const node = c.el;
     node.onpointerdown = (e) => {
       if (e.button !== 0) return;
       if (!editable) { S.homeSel = c.t; lay(); inspector(); return; }
+      if (canvasOn() && !phone) { canvasDrag(c, e); return; }
       const r0 = node.getBoundingClientRect();
       const off = { x: e.clientX - r0.left, y: e.clientY - r0.top };
       let ghost = null, last = '', raf = 0, ev = null, calmUntil = 0;
@@ -810,7 +896,7 @@ function viewHome(wrap) {
       <p class="hint" style="margin:0 0 8px">Free crop in the picture at the top, or a quick shape:</p>
       <div class="shapes">${SHAPES.map(([key, l]) => `<button data-r="${key}"><i style="aspect-ratio:${key || c.m.ratio || 1.78}"></i>${key ? l : 'Whole frame'}</button>`).join('')}</div>
       <label class="check"><input type="checkbox" data-br ${t.br ? 'checked' : ''}> Start below everything above</label>
-      <h3>Position</h3>
+      <h3>${canvasOn() && !phone ? 'Order on phones' : 'Position'}</h3>
       <div class="seg full"><button data-mv="first" title="Move to the start">First</button><button data-mv="-1" title="Earlier (← key)">←</button><button data-mv="1" title="Later (→ key)">→</button><button data-mv="last" title="Move to the end">Last</button></div>
       <p style="margin-top:22px;display:flex;justify-content:space-between">
         <button class="btn quiet" data-desel>Done</button>
