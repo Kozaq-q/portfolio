@@ -1,5 +1,5 @@
-import { mountWall, PHONE } from './wall.js?v=12';
-import { FONTS } from './shell.js?v=12';
+import { mountWall, PHONE } from './wall.js?v=13';
+import { FONTS } from './shell.js?v=13';
 
 const doc = document.documentElement;
 const ROOT = doc.dataset.root || '';
@@ -91,14 +91,14 @@ function chrome(site) {
     <header class="bar">
       <a class="name" href="${HOME}">${esc(s.name)}</a>
       <nav>
-        <button data-open="index">Index</button>
+        <button data-open="index">Projects</button>
         ${s.showreel ? '<button data-reel>Showreel</button>' : ''}
         <button data-open="info">Contact</button>
       </nav>
     </header>`);
 
   const index = h(`
-    <div class="sheet index" hidden role="dialog" aria-label="Index">
+    <div class="sheet index" hidden role="dialog" aria-label="Projects">
       <ol>${listed(site).map((p, i) => `
         <li><a href="${projectUrl(p.slug)}" data-i="${i}">${esc(p.title)}<small>${esc(kind(p))}</small></a></li>`).join('')}
       </ol>
@@ -149,7 +149,7 @@ function chrome(site) {
   const set = (name) => {
     open = open === name ? null : name;
     for (const [k, el] of Object.entries(sheets)) el.hidden = k !== open;
-    buttons.forEach((b) => (b.textContent = b.dataset.open === open ? 'Close' : b.dataset.open === 'index' ? 'Index' : 'Contact'));
+    buttons.forEach((b) => (b.textContent = b.dataset.open === open ? 'Close' : b.dataset.open === 'index' ? 'Projects' : 'Contact'));
     document.body.classList.toggle('locked', !!open);
     if (!open && shown) { shown.classList.remove('on'); playIn(shown, false); shown = null; }
   };

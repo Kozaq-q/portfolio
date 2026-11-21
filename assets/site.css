@@ -157,12 +157,16 @@ a.cell:hover .label, a.cell:focus-visible .label { opacity: 1; transform: none; 
 .sheet.index { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 40px; align-items: center; }
 .sheet.index[hidden] { display: none; }
 .sheet.index ol { list-style: none; margin: 0; padding: 0; }
+.sheet.index li + li { margin-top: .16em; }
+/* the type sits right after the last word, even when a long title wraps */
 .sheet.index li a { font-family: var(--display);
-  display: flex; align-items: baseline; gap: 16px;
-  font-size: clamp(30px, 3.6vw, 60px); line-height: 1.06; letter-spacing: calc(-.028em * var(--trk));
+  --fs: clamp(30px, 3.6vw, 60px);
+  display: block; text-wrap: balance;
+  font-size: var(--fs); line-height: 1.02; letter-spacing: calc(-.028em * var(--trk));
   transition: color .3s var(--ease);
 }
-.sheet.index li a small { font-size: 12px; letter-spacing: 0; color: var(--mute); transform: translateY(-1.2em); }
+.sheet.index li a small { display: inline-block; position: relative; top: calc(var(--fs) * -.27); margin-left: calc(var(--fs) * .22); white-space: nowrap;
+  font-family: var(--font); font-size: 12px; line-height: 1; letter-spacing: 0; color: var(--mute); }
 .sheet.index ol:hover a { color: var(--mute); }
 .sheet.index ol:hover a:hover { color: var(--fg); }
 .preview { position: relative; height: min(70vh, 640px); }
