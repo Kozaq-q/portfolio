@@ -66,6 +66,59 @@
       ]
     },
     {
+      "slug": "gooddog",
+      "title": "Beware of good dog",
+      "type": "Short film",
+      "year": 2024,
+      "crew": [
+        {
+          "role": "Director",
+          "name": "Adelina Borets"
+        },
+        {
+          "role": "Cinematographer",
+          "name": "Paweł Kozak"
+        }
+      ],
+      "description": "",
+      "festivals": [],
+      "film": "",
+      "media": [
+        {
+          "id": "mwqt6wwrv0yg",
+          "type": "video",
+          "src": "r2:media/gooddog/mwqt6vf17qxz-udb4-portfolio.mov",
+          "poster": "media/gooddog/mwqt6vf17qxz-udb4-portfolio-poster.webp",
+          "ratio": 1.3724
+        },
+        {
+          "id": "mwqt6x3k81qz",
+          "type": "video",
+          "src": "r2:media/gooddog/mwqt6wwr168r-udb3-portfolio.mov",
+          "poster": "media/gooddog/mwqt6wwr168r-udb3-portfolio-poster.webp",
+          "ratio": 1.3724
+        },
+        {
+          "id": "mwqt9rkvisjj",
+          "type": "image",
+          "src": "media/gooddog/mwqt9reo4n01-zrzut-ekranu-2024-06-10-o-23-00-10.webp",
+          "ratio": 1.2964
+        },
+        {
+          "id": "mwqt9rrqxhrw",
+          "type": "image",
+          "src": "media/gooddog/mwqt9rkvhv3g-zrzut-ekranu-2024-06-10-o-22-59-18.webp",
+          "ratio": 1.3008
+        },
+        {
+          "id": "mwqt9ryjet21",
+          "type": "image",
+          "src": "media/gooddog/mwqt9rrqm60l-zrzut-ekranu-2024-06-10-o-22-52-08.webp",
+          "ratio": 1.2971
+        }
+      ]
+    },
+    {
       "slug": "metro4x",
       "title": "Metro4x - \"Nic nie płonie\"",
       "type": "Music Video clip",
@@ -183,6 +236,10 @@
       "w": 34
     },
     {
+      "p": "gooddog",
+      "m": "mwqt6wwrv0yg"
+    },
+    {
       "p": "metro4x",
       "m": "mwqk67l9gx4d",
       "w": 31
@@ -206,6 +263,14 @@
       "p": "metro4x",
       "m": "mwqk67hes4yv",
       "s": "xs"
+    },
+    {
+      "p": "gooddog",
+      "m": "mwqt6x3k81qz"
+    },
+    {
+      "p": "gooddog",
+      "m": "mwqt9ryjet21"
     }
   ],
   "homePhone": [
@@ -250,6 +315,18 @@
     {
       "p": "metro4x",
       "m": "mwqk67l9gx4d"
+    },
+    {
+      "p": "gooddog",
+      "m": "mwqt6wwrv0yg"
+    },
+    {
+      "p": "gooddog",
+      "m": "mwqt6x3k81qz"
+    },
+    {
+      "p": "gooddog",
+      "m": "mwqt9ryjet21"
     }
   ]
 }
