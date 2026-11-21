@@ -2,13 +2,13 @@
   "settings": {
     "name": "Paweł Kozak",
     "role": "Cinematographer",
-    "email": "hello@yourname.com",
-    "instagram": "",
+    "email": "pawelkozak4327@gmail.com",
+    "instagram": "https://www.instagram.com/kozaq__/",
     "showreel": "",
     "bio": "Cinematographer based in Poland, working on short films, documentaries and music videos.\n\nAvailable for projects in Poland and abroad.",
-    "description": "Cinematographer — short films, documentaries and music videos.",
+    "description": "Cinematographer",
     "siteUrl": "",
-    "theme": "light",
+    "theme": "dark",
     "repo": {
       "owner": "Kozaq-q",
       "name": "portfolio",
