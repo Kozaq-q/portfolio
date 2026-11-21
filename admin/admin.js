@@ -1,8 +1,8 @@
 // Studio — content editor for the portfolio.
 // Edits content/site.json and media in the GitHub repository through the GitHub API.
 // Nothing is stored on a server: the access token lives only in this browser (localStorage).
-import { allShells, FONTS, V as STUDIO_V } from '../assets/shell.js?v=21';
-import { packGrid, packCanvas, packMirror, renderGrid, REF, SHAPES, PRESETS, sizePct, cropRect, croppedRatio, applyCrop } from '../assets/wall.js?v=21';
+import { allShells, FONTS, V as STUDIO_V } from '../assets/shell.js?v=22';
+import { packGrid, packCanvas, packMirror, renderGrid, REF, SHAPES, PRESETS, sizePct, cropRect, croppedRatio, applyCrop } from '../assets/wall.js?v=22';
 
 const CFG_KEY = 'studio.cfg';
 const R2_KEY = 'studio.r2'; // video storage keys (Cloudflare R2) — kept only in this browser
@@ -956,6 +956,7 @@ function viewSettings(wrap) {
         <label><span>Instagram (handle or link, optional)</span><input data-k="instagram" placeholder="@yourname"></label>
       </div>
       <label><span>Showreel — Vimeo or YouTube link (optional)</span><input data-k="showreel" placeholder="https://vimeo.com/…"></label>
+      <label><span>Filmpolski — link to your page (optional)</span><input data-k="filmpolski" placeholder="https://filmpolski.pl/fp/index.php?osoba=…"></label>
       <h3>Contact page</h3>
       <div class="portraitbox">
         <div class="pthumb">${s.portrait?.src ? `<img src="${esc(mediaUrl(s.portrait.src))}" alt="">` : '<span>No photo</span>'}</div>

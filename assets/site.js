@@ -1,5 +1,5 @@
-import { mountWall, PHONE, cropRect, croppedRatio, applyCrop } from './wall.js?v=21';
-import { FONTS } from './shell.js?v=21';
+import { mountWall, PHONE, cropRect, croppedRatio, applyCrop } from './wall.js?v=22';
+import { FONTS } from './shell.js?v=22';
 
 const doc = document.documentElement;
 const ROOT = doc.dataset.root || '';
@@ -114,19 +114,20 @@ function chrome(site) {
     if (!m) return null;
     const f = frame(m, { observe: false });
     f.style.aspectRatio = m.ratio;
-    f.style.width = `min(100%, calc(min(70vh, 640px) * ${m.ratio}))`;
+    f.style.width = `min(100%, calc(var(--pv) * ${m.ratio}))`;
     preview.append(f);
     return f;
   });
   let shown = null;
-  index.querySelectorAll('li a').forEach((a) => a.addEventListener('mouseenter', () => {
-    const f = previews[+a.dataset.i];
+  const show = (f) => {
     if (shown && shown !== f) { shown.classList.remove('on'); playIn(shown, false); }
     if (f) { f.classList.add('on'); playIn(f, true); }
     shown = f;
-  }));
+  };
+  index.querySelectorAll('li a').forEach((a) => a.addEventListener('mouseenter', () => show(previews[+a.dataset.i])));
 
   const bio = (s.bio || '').split(/\n{2,}/).filter(Boolean).map((t) => `<p>${esc(t).replace(/\n/g, '<br>')}</p>`).join('');
+  const fp = s.filmpolski ? (/^https?:/.test(s.filmpolski) ? s.filmpolski : `https://${s.filmpolski.replace(/^\/+/, '')}`) : '';
   const insta = s.instagram ? (s.instagram.startsWith('http') ? s.instagram : `https://instagram.com/${s.instagram.replace('@', '')}`) : '';
   const ph = s.portrait;
   const info = h(`
@@ -141,6 +142,7 @@ function chrome(site) {
           <dl class="links">
             ${s.email ? `<dt>Email</dt><dd><a href="mailto:${esc(s.email)}">${esc(s.email)}</a></dd>` : ''}
             ${insta ? `<dt>Instagram</dt><dd><a href="${esc(insta)}" target="_blank" rel="noopener">${esc(insta.replace(/^https?:\/\/(www\.)?instagram\.com\//, '@').replace(/\/$/, ''))}</a></dd>` : ''}
+            ${fp ? `<dt>Filmpolski</dt><dd><a href="${esc(fp)}" target="_blank" rel="noopener">filmpolski.pl</a></dd>` : ''}
             ${s.showreel ? '<dt>Showreel</dt><dd><a href="#" data-reel>Watch →</a></dd>' : ''}
           </dl>
         </div>
@@ -156,6 +158,7 @@ function chrome(site) {
     buttons.forEach((b) => (b.textContent = b.dataset.open === open ? 'Close' : b.dataset.open === 'index' ? 'Projects' : 'Contact'));
     document.body.classList.toggle('locked', !!open);
     if (!open && shown) { shown.classList.remove('on'); playIn(shown, false); shown = null; }
+    if (open === 'index') show(previews.find(Boolean)); // start with the first project (phones never hover)
   };
   buttons.forEach((b) => (b.onclick = () => set(b.dataset.open)));
   addEventListener('keydown', (e) => { if (e.key === 'Escape' && open) set(open); });
@@ -223,7 +226,8 @@ function project(site, main) {
     const hero = h('<section class="hero"></section>');
     const f = frame(first);
     f.style.aspectRatio = first.ratio || 16 / 9;
-    f.style.width = `min(100%, calc(${CSS.supports('height', '100svh') ? '100svh' : '100vh'} * ${first.ratio || 16 / 9}))`;
+    // a little smaller than the screen, on the page background, so the title below peeks in
+    f.style.width = `min(100%, calc((${CSS.supports('height', '100svh') ? '100svh' : '100vh'} - var(--hero-gap)) * ${first.ratio || 16 / 9}))`;
     hero.append(f);
     main.append(hero);
   }
@@ -260,7 +264,7 @@ function project(site, main) {
   for (let k = 1; k < order.length && !next; k++) { const q = order[(i + k) % order.length]; if (!q.hidden) next = q; }
   if (next && next !== p) {
     const m = next.media.find((x) => x.type === 'video') || next.media[0];
-    const a = h(`<a class="next" href="${projectUrl(next.slug)}"><span class="txt"><b>${esc(next.title)}</b><span>Next project →</span></span></a>`);
+    const a = h(`<a class="next" href="${projectUrl(next.slug)}"><span class="txt"><span>Next project</span><b>${esc(next.title)}</b></span></a>`);
     if (m) a.prepend(frame(m));
     main.append(a);
   }
