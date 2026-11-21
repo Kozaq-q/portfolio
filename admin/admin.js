@@ -1,10 +1,11 @@
 // Studio — content editor for the portfolio.
 // Edits content/site.json and media in the GitHub repository through the GitHub API.
 // Nothing is stored on a server: the access token lives only in this browser (localStorage).
-import { allShells, FONTS } from '../assets/shell.js?v=9';
-import { packRows, renderRows, SIZES, SHAPES, PHONE_SIZES } from '../assets/wall.js?v=9';
+import { allShells, FONTS } from '../assets/shell.js?v=10';
+import { packRows, renderRows, SIZES, SHAPES, PHONE_SIZES } from '../assets/wall.js?v=10';
 
 const CFG_KEY = 'studio.cfg';
+const R2_KEY = 'studio.r2'; // video storage keys (Cloudflare R2) — kept only in this browser
 const API = 'https://api.github.com';
 
 const S = {
@@ -32,7 +33,9 @@ const h = (html) => { const t = document.createElement('template'); t.innerHTML 
 const slugify = (s) => String(s).normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/ł/g, 'l').replace(/Ł/g, 'L')
   .toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'project';
 const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
-const mediaUrl = (p) => (!p ? '' : S.files.get(p)?.url || (/^https?:/.test(p) ? p : '../' + p));
+// paths: 'media/…' live in the GitHub repo, 'r2:media/…' in the video storage (Cloudflare R2)
+const mediaBase = () => (S.site?.settings.mediaBase || '').replace(/\/*$/, '/');
+const mediaUrl = (p) => (!p ? '' : S.files.get(p)?.url || (/^https?:/.test(p) ? p : p.startsWith('r2:') ? mediaBase() + p.slice(3) : '../' + p));
 const project = () => S.site.projects.find((p) => p.slug === S.current);
 const dirty = () => JSON.stringify(S.site) !== S.baseJson || [...S.files.values()].some((f) => !f.uploaded) || S.removed.size > 0;
 const mb = (n) => (n / 1048576).toFixed(1) + ' MB';
@@ -102,11 +105,18 @@ async function publish() {
     const uploads = [...S.files.entries()].filter(([path, f]) => !f.uploaded && used.has(path));
     let i = 0;
     for (const [path, f] of uploads) {
-      status(`Uploading ${++i}/${uploads.length} — ${mb(f.blob.size)}`);
+      const label = `Uploading ${++i}/${uploads.length} — ${mb(f.blob.size)}`;
+      status(label);
+      if (path.startsWith('r2:')) { await r2Put(path.slice(3), f.blob, (x) => status(`${label} · ${Math.round(x * 100)}%`)); continue; }
       const blob = await gh('/git/blobs', { method: 'POST', body: JSON.stringify({ content: await b64(f.blob), encoding: 'base64' }) });
       tree.push({ path, mode: '100644', type: 'blob', sha: blob.sha });
     }
-    for (const path of S.removed) if (!used.has(path) && !S.files.has(path)) tree.push({ path, mode: '100644', type: 'blob', sha: null });
+    const r2Gone = [];
+    for (const path of S.removed) {
+      if (used.has(path) || S.files.has(path)) continue;
+      if (path.startsWith('r2:')) r2Gone.push(path.slice(3));
+      else tree.push({ path, mode: '100644', type: 'blob', sha: null });
+    }
 
     // content + generated pages
     S.site.home = S.site.home.filter((t) => S.site.projects.find((x) => x.slug === t.p)?.media.some((x) => x.id === t.m));
@@ -124,6 +134,7 @@ async function publish() {
     for (const [, f] of uploads) f.uploaded = true;
     for (const [path, f] of S.files) if (!used.has(path)) { URL.revokeObjectURL(f.url); S.files.delete(path); }
     S.removed.clear();
+    for (const key of r2Gone) r2Delete(key).catch((e) => console.warn('R2 delete', key, e));
     S.baseJson = JSON.stringify(S.site);
     S.baseSlugs = slugs;
     S.busy = false;
@@ -135,6 +146,51 @@ async function publish() {
     else toast(e.message, 7000);
     console.error(e);
   }
+}
+
+/* ---------- video storage: Cloudflare R2 (S3-compatible) ---------- */
+const r2Conf = () => { const c = load(R2_KEY); return c?.account && c.bucket && c.accessKeyId && c.secretAccessKey ? c : null; };
+const r2Ready = () => !!(r2Conf() && S.site?.settings.mediaBase);
+let awsLib = null;
+async function r2Client() {
+  const c = r2Conf();
+  if (!c) throw new Error('Video storage is not set up — see Settings.');
+  awsLib ||= import('https://cdn.jsdelivr.net/npm/aws4fetch@1.0.20/dist/aws4fetch.esm.mjs');
+  const { AwsClient } = await awsLib;
+  return { c, aws: new AwsClient({ accessKeyId: c.accessKeyId, secretAccessKey: c.secretAccessKey, service: 's3', region: 'auto' }) };
+}
+const r2Url = (c, key) => `https://${c.account}.r2.cloudflarestorage.com/${encodeURIComponent(c.bucket)}/${key.split('/').map(encodeURIComponent).join('/')}`;
+const r2Type = (key) => ({ mp4: 'video/mp4', m4v: 'video/mp4', mov: 'video/quicktime', webm: 'video/webm', txt: 'text/plain' })[key.split('.').pop().toLowerCase()] || 'application/octet-stream';
+
+// PUT with upload progress (XMLHttpRequest), signed with the R2 keys
+async function r2Put(key, blob, onProgress) {
+  const { c, aws } = await r2Client();
+  const type = r2Type(key);
+  const req = await aws.sign(r2Url(c, key), { method: 'PUT', headers: { 'Content-Type': type, 'Cache-Control': 'public, max-age=31536000, immutable' } });
+  await new Promise((ok, bad) => {
+    const x = new XMLHttpRequest();
+    x.open('PUT', req.url);
+    req.headers.forEach((v, k) => { if (k !== 'host' && k !== 'content-length') x.setRequestHeader(k, v); });
+    x.upload.onprogress = (e) => e.lengthComputable && onProgress?.(e.loaded / e.total);
+    x.onload = () => (x.status < 300 ? ok() : bad(new Error(`Video storage refused the upload (${x.status}). Check the keys and bucket name in Settings.`)));
+    x.onerror = () => bad(new Error('Video storage could not be reached. Check the CORS policy on the bucket (see the setup guide).'));
+    x.send(blob);
+  });
+}
+async function r2Delete(key) {
+  const { c, aws } = await r2Client();
+  const res = await aws.fetch(r2Url(c, key), { method: 'DELETE' });
+  if (!res.ok && res.status !== 404) throw new Error(`R2 delete ${res.status}`);
+}
+// upload a tiny file, read it back through the public URL, delete it
+async function r2Test() {
+  const key = `studio-test-${uid()}.txt`;
+  try { await r2Put(key, new Blob(['ok'], { type: 'text/plain' })); }
+  catch (e) { throw new Error(e.message.includes('CORS') ? 'Could not reach the bucket. Check the Account ID and the CORS policy.' : e.message); }
+  let pub;
+  try { pub = await fetch(mediaBase() + key, { cache: 'no-store' }); } catch { pub = null; }
+  await r2Delete(key).catch(() => {});
+  if (!pub || !pub.ok) throw new Error('Upload works, but the public URL does not serve files. Check “Public bucket URL” and that public access is on.');
 }
 
 /* ---------- media processing ---------- */
@@ -210,13 +266,19 @@ async function addMedia(p, fileList) {
         const img = await processImage(file);
         p.media.push({ id: uid(), type: 'image', src: addFile(`${base}.${img.ext}`, img.blob), ratio: +img.ratio.toFixed(4) });
       } else if (file.type.startsWith('video/') || /\.(mp4|mov|webm|m4v)$/i.test(file.name)) {
-        if (file.size > 95 * 1048576) { toast(`“${file.name}” is ${mb(file.size)} — the limit is 95 MB. Export a shorter or lighter version.`, 7000); continue; }
-        if (file.size > 25 * 1048576 && !confirm(`“${file.name}” is ${mb(file.size)}.\n\nLoops work best under ~15 MB (720–1080p, H.264, 5–10 s, no audio). Heavy clips slow down the page.\n\nUpload anyway?`)) continue;
+        const big = r2Ready();
+        const max = big ? 2048 : 95, warn = big ? 60 : 25;
+        if (file.size > max * 1048576) {
+          toast(big ? `“${file.name}” is ${mb(file.size)} — the limit is 2 GB.`
+            : `“${file.name}” is ${mb(file.size)} — the limit is 95 MB. Connect video storage in Settings to upload bigger files.`, 8000);
+          continue;
+        }
+        if (file.size > warn * 1048576 && !confirm(`“${file.name}” is ${mb(file.size)}.\n\nLoops on the page work best under ~15 MB (1920 px, H.264, 5–10 s, no audio). Heavy clips load slowly, especially on phones.\n\nUpload anyway?`)) continue;
         const vid = await processVideo(file);
         const ext = (file.name.match(/\.([a-z0-9]+)$/i)?.[1] || 'mp4').toLowerCase();
         p.media.push({
           id: uid(), type: 'video',
-          src: addFile(`${base}.${ext}`, file),
+          src: addFile(`${big ? 'r2:' : ''}${base}.${ext}`, file),
           poster: addFile(`${base}-poster.${vid.poster.ext}`, vid.poster.blob),
           ratio: +vid.ratio.toFixed(4),
         });
@@ -703,6 +765,24 @@ function viewSettings(wrap) {
       </div>
       <label style="display:flex;gap:10px;align-items:flex-start"><input type="checkbox" data-hidden style="width:auto;margin-top:3px"${s.hidden !== false ? ' checked' : ''}>
         <span style="color:var(--fg);font-size:14px">Hide from Google and other search engines<br><small class="hint">Keep this on until the site is ready. The site still opens for anyone who has the link.</small></span></label>
+      <h3>Video storage — Cloudflare R2</h3>
+      <div class="r2box">
+        <p class="hint" style="margin:0 0 12px">${r2Ready()
+          ? '<b style="color:var(--ok)">Connected.</b> New clips upload here (up to 2 GB each); photos stay on GitHub.'
+          : 'Optional. Without it, clips are stored on GitHub: up to 95 MB each and about 1 GB for the whole site.'}</p>
+        <div class="row">
+          <label><span>Account ID</span><input data-r2="account" autocomplete="off" spellcheck="false"></label>
+          <label><span>Bucket name</span><input data-r2="bucket" autocomplete="off" spellcheck="false"></label>
+        </div>
+        <label><span>Public bucket URL (published with the site)</span><input data-k="mediaBase" placeholder="https://pub-….r2.dev" spellcheck="false"></label>
+        <div class="row">
+          <label><span>Access Key ID</span><input data-r2="accessKeyId" autocomplete="off" spellcheck="false"></label>
+          <label><span>Secret Access Key</span><input data-r2="secretAccessKey" type="password" autocomplete="off"></label>
+        </div>
+        <p class="hint">The two keys are saved only in this browser, like your GitHub token. They are never published.</p>
+        <p style="display:flex;gap:10px;align-items:center;margin-bottom:0"><button class="btn" data-r2test>Save and test</button>
+          ${load(R2_KEY) ? '<button class="btn quiet danger" data-r2forget>Forget keys on this device</button>' : ''}<span class="hint" data-r2msg style="margin:0"></span></p>
+      </div>
       <h3>Connection</h3>
       <p class="hint">${S.offline ? 'Preview mode — not connected to GitHub.' : `Connected to <b>${esc(S.cfg.owner)}/${esc(S.cfg.repo)}</b> (${esc(S.cfg.branch)}).`}</p>
       <p><button class="btn" data-out>${S.offline ? 'Connect to GitHub' : 'Sign out on this device'}</button></p>
@@ -722,6 +802,26 @@ function viewSettings(wrap) {
     } catch (e) { toast(e.message, 6000); }
     render();
   };
+  const r2c = load(R2_KEY) || {};
+  el.querySelectorAll('[data-r2]').forEach((inp) => (inp.value = r2c[inp.dataset.r2] || ''));
+  const r2msg = $('[data-r2msg]', el);
+  $('[data-r2test]', el).onclick = async () => {
+    const c = {};
+    el.querySelectorAll('[data-r2]').forEach((inp) => (c[inp.dataset.r2] = inp.value.trim()));
+    c.account = c.account.replace(/^https?:\/\//, '').replace(/\.r2\.cloudflarestorage\.com.*$/, '');
+    s.mediaBase = (s.mediaBase || '').trim().replace(/\/+$/, '');
+    if (!c.account || !c.bucket || !c.accessKeyId || !c.secretAccessKey || !s.mediaBase) { r2msg.textContent = 'Fill in all five fields.'; return; }
+    save(R2_KEY, c);
+    r2msg.textContent = 'Testing…';
+    try {
+      await r2Test();
+      r2msg.textContent = '';
+      toast('Video storage works. New clips will upload there. Publish to save the public URL.', 6000);
+      render();
+    } catch (e) { r2msg.textContent = e.message; r2msg.style.color = 'var(--warn)'; }
+  };
+  const forget = $('[data-r2forget]', el);
+  if (forget) forget.onclick = () => { localStorage.removeItem(R2_KEY); render(); };
   const norm = $('[data-norm]', el);
   if (norm) norm.onclick = () => { forgetMedia(s.portrait); delete s.portrait; render(); };
   $('[data-out]', el).onclick = () => {

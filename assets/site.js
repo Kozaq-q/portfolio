@@ -1,5 +1,5 @@
-import { mountWall, PHONE } from './wall.js?v=9';
-import { FONTS } from './shell.js?v=9';
+import { mountWall, PHONE } from './wall.js?v=10';
+import { FONTS } from './shell.js?v=10';
 
 const doc = document.documentElement;
 const ROOT = doc.dataset.root || '';
@@ -9,7 +9,9 @@ const REDUCED = matchMedia('(prefers-reduced-motion: reduce)').matches;
 const HOME = ROOT || './';
 
 const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
-const src = (p) => (!p ? '' : /^(https?:|blob:|data:)/.test(p) ? p : ROOT + p);
+// 'r2:…' = a file in the video storage (Cloudflare R2), served from settings.mediaBase
+let MEDIA = '';
+const src = (p) => (!p ? '' : /^(https?:|blob:|data:)/.test(p) ? p : p.startsWith('r2:') ? MEDIA + p.slice(3) : ROOT + p);
 const projectUrl = (slug) => `${ROOT}work/${slug}/`;
 const kind = (p) => [p.type, p.year].filter(Boolean).join(', ');
 const h = (html) => { const t = document.createElement('template'); t.innerHTML = html.trim(); return t.content.firstElementChild; };
@@ -253,6 +255,7 @@ async function main() {
   const res = await fetch(`${ROOT}content/site.json`, { cache: 'no-cache' });
   const site = await res.json();
   doc.dataset.theme = site.settings.theme || 'light';
+  MEDIA = (site.settings.mediaBase || '').replace(/\/*$/, '/');
   const app = document.getElementById('app');
   const mainEl = document.createElement('main');
   app.replaceChildren(...chrome(site), mainEl);

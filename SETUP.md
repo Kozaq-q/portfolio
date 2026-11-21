@@ -87,3 +87,38 @@ Usuń je w Studio, gdy dodasz swoje projekty.
 
 Strona do 1 GB, transfer ok. 100 GB miesięcznie. Kilkadziesiąt lekkich pętli mieści się bez problemu.
 Pełne filmy i showreel trzymaj na Vimeo lub YouTube (wklejasz tylko link).
+Jeden plik może mieć najwyżej 100 MB. Jeśli to za mało, podłącz magazyn na filmy (punkt 9).
+
+## 9. Większy limit na filmy: Cloudflare R2
+
+Po podłączeniu R2 nowe klipy z Studio trafiają do R2 zamiast na GitHuba. Limit to 2 GB na plik, 10 GB za darmo łącznie (potem ok. 0,015 USD za GB miesięcznie), a transfer do widzów jest bezpłatny. Zdjęcia zostają na GitHubie.
+
+1. Załóż konto na https://dash.cloudflare.com/sign-up. To samo konto przyda się później do domeny.
+2. W menu po lewej wybierz **R2 Object Storage** i włącz R2 (plan darmowy). Cloudflare poprosi o kartę, ale w darmowym limicie nic nie pobiera.
+3. Kliknij **Create bucket**. Nazwa: `portfolio-media`, Location: Automatic. Potem kliknij **Create bucket**.
+4. W buckecie wejdź w **Settings**, znajdź **Public Development URL** (r2.dev) i kliknij **Enable**. Skopiuj adres `https://pub-….r2.dev`.
+5. W tym samym miejscu znajdź **CORS Policy**, kliknij **Add / Edit** i wklej:
+   ```json
+   [
+     {
+       "AllowedOrigins": ["https://kozaq-q.github.io", "http://localhost:8484"],
+       "AllowedMethods": ["GET", "HEAD", "PUT", "DELETE"],
+       "AllowedHeaders": ["*"],
+       "ExposeHeaders": ["ETag"],
+       "MaxAgeSeconds": 3600
+     }
+   ]
+   ```
+   Gdy strona dostanie własną domenę, dopisz ją do `AllowedOrigins`, np. `"https://imienazwisko.com"`.
+6. Wróć do **R2 Object Storage**, wejdź w **Manage API tokens** i kliknij **Create Account API token** (albo **Create API token**).
+   - Nazwa: `Studio`.
+   - Permissions: **Object Read & Write**.
+   - Specify bucket(s): tylko `portfolio-media`.
+   - TTL: Forever.
+
+   Kliknij **Create**. Skopiuj **Access Key ID** i **Secret Access Key**: secret pokazuje się tylko raz. Na tej samej stronie, albo w prawej kolumnie strony R2, jest **Account ID**.
+7. Otwórz Studio, wejdź w **Settings**, potem w **Video storage — Cloudflare R2**. Wpisz Account ID, nazwę bucketu (`portfolio-media`), publiczny adres z kroku 4 oraz oba klucze. Kliknij **Save and test**, a potem **Publish**, żeby strona znała adres filmów.
+
+Klucze zapisują się tylko w tej przeglądarce, tak jak token GitHuba. Na innym komputerze wpisz je ponownie. Jeśli klucz wycieknie, usuń token w Cloudflare i utwórz nowy.
+
+Później, po kupnie domeny w Cloudflare, zamiast adresu r2.dev możesz w ustawieniach bucketu podpiąć **Custom Domain** (np. `media.imienazwisko.com`). Adres r2.dev ma ograniczenia przy dużym ruchu. Wtedy podmień „Public bucket URL” w Studio i opublikuj. Wcześniej wgrane klipy dalej będą działać.
