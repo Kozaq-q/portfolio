@@ -445,6 +445,110 @@
           "ratio": 1.3724
         }
       ]
+    },
+    {
+      "slug": "photo-journal",
+      "journal": true,
+      "title": "Photo journal",
+      "type": "Photographs",
+      "year": "",
+      "crew": [],
+      "description": "Pictures I have taken throughout the years. ",
+      "festivals": [],
+      "film": "",
+      "media": [
+        {
+          "id": "mwutun4vinua",
+          "type": "image",
+          "src": "media/photo-journal/mwutumqj5hd1-104213170010.webp",
+          "ratio": 1.3335
+        },
+        {
+          "id": "mwutunni35nj",
+          "type": "image",
+          "src": "media/photo-journal/mwutun4v0j9q-pra07347.webp",
+          "ratio": 1
+        },
+        {
+          "id": "mwutunzdyh3x",
+          "type": "image",
+          "src": "media/photo-journal/mwutunniaz42-104233480014.webp",
+          "ratio": 1
+        },
+        {
+          "id": "mwutuo90m1sp",
+          "type": "image",
+          "src": "media/photo-journal/mwutunzdt77l-dsc01336.webp",
+          "ratio": 1
+        },
+        {
+          "id": "mwutuokyuge9",
+          "type": "image",
+          "src": "media/photo-journal/mwutuo90mw4g-104112710034.webp",
+          "ratio": 1.333
+        },
+        {
+          "id": "mwutup3kv9fn",
+          "type": "image",
+          "src": "media/photo-journal/mwutuoky825r-dsc00549.webp",
+          "ratio": 1.25
+        },
+        {
+          "id": "mwutupdbtd6x",
+          "type": "image",
+          "src": "media/photo-journal/mwutup3ohofj-dsc01798.webp",
+          "ratio": 1.3333
+        },
+        {
+          "id": "mwuu11138fgf",
+          "type": "image",
+          "src": "media/photo-journal/mwuu10m0bjzc-000021-2.webp",
+          "ratio": 1.3332
+        },
+        {
+          "id": "mwuu11h5twyi",
+          "type": "image",
+          "src": "media/photo-journal/mwuu1113a3i8-000034.webp",
+          "ratio": 1
+        },
+        {
+          "id": "mwuu11vkl2kd",
+          "type": "image",
+          "src": "media/photo-journal/mwuu11h5q670-000032.webp",
+          "ratio": 1
+        },
+        {
+          "id": "mwuu12b53rn0",
+          "type": "image",
+          "src": "media/photo-journal/mwuu11vk37g1-000021.webp",
+          "ratio": 1
+        },
+        {
+          "id": "mwuu12jus3ti",
+          "type": "image",
+          "src": "media/photo-journal/mwuu12b5fhu0-000034-2.webp",
+          "ratio": 0.763
+        },
+        {
+          "id": "mwuu12vuxw81",
+          "type": "image",
+          "src": "media/photo-journal/mwuu12ju27dw-000055-3.webp",
+          "ratio": 1.3335
+        },
+        {
+          "id": "mwuu14hp8vlv",
+          "type": "image",
+          "src": "media/photo-journal/mwuu12vvc1da-img-5762.webp",
+          "ratio": 1
+        },
+        {
+          "id": "mwuu2ary8k46",
+          "type": "image",
+          "src": "media/photo-journal/mwuu2ad1xto2-104205640029.webp",
+          "ratio": 1.3332
+        }
+      ],
+      "hidden": true
     }
   ],
   "home": [
