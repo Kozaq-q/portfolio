@@ -396,6 +396,55 @@
           "ratio": 1.3724
         }
       ]
+    },
+    {
+      "slug": "chocolate",
+      "title": "Chocolate",
+      "type": "Short film",
+      "year": 2025,
+      "crew": [
+        {
+          "role": "Director",
+          "name": "Paweł Kozak"
+        },
+        {
+          "role": "Director of photography",
+          "name": "Paweł Kozak"
+        }
+      ],
+      "description": "",
+      "festivals": [],
+      "film": "",
+      "media": [
+        {
+          "id": "mwut2l2bnlg8",
+          "type": "video",
+          "src": "r2:media/chocolate/mwut2kuo0b7o-czekolada5-portfolio.mov",
+          "poster": "media/chocolate/mwut2kuo0b7o-czekolada5-portfolio-poster.webp",
+          "ratio": 1.3724
+        },
+        {
+          "id": "mwut2q0qu4ur",
+          "type": "video",
+          "src": "r2:media/chocolate/mwut2pt9hy5i-czekolada3-portfolio.mov",
+          "poster": "media/chocolate/mwut2pt9hy5i-czekolada3-portfolio-poster.webp",
+          "ratio": 1.3724
+        },
+        {
+          "id": "mwut2q6qm5hd",
+          "type": "video",
+          "src": "r2:media/chocolate/mwut2q0rkcyu-czekolada2-portfolio.mov",
+          "poster": "media/chocolate/mwut2q0rkcyu-czekolada2-portfolio-poster.webp",
+          "ratio": 1.3724
+        },
+        {
+          "id": "mwut2qejb5eq",
+          "type": "video",
+          "src": "r2:media/chocolate/mwut2q6q0r3f-czekolada1-portfolio.mov",
+          "poster": "media/chocolate/mwut2q6q0r3f-czekolada1-portfolio-poster.webp",
+          "ratio": 1.3724
+        }
+      ]
     }
   ],
   "home": [
@@ -606,6 +655,18 @@
     {
       "p": "sonny-boy",
       "m": "mwusulv0j8ul"
+    },
+    {
+      "p": "chocolate",
+      "m": "mwut2l2bnlg8"
+    },
+    {
+      "p": "chocolate",
+      "m": "mwut2q0qu4ur"
+    },
+    {
+      "p": "chocolate",
+      "m": "mwut2qejb5eq"
     }
   ],
   "homeCanvas": true
