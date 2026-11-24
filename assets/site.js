@@ -1,5 +1,5 @@
-import { mountWall, PHONE, cropRect, croppedRatio, applyCrop } from './wall.js?v=32';
-import { FONTS } from './shell.js?v=32';
+import { mountWall, PHONE, cropRect, croppedRatio, applyCrop } from './wall.js?v=35';
+import { FONTS } from './shell.js?v=35';
 
 const doc = document.documentElement;
 const ROOT = doc.dataset.root || '';

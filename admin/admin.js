@@ -1,8 +1,8 @@
 // Studio — content editor for the portfolio.
 // Edits content/site.json and media in the GitHub repository through the GitHub API.
 // Nothing is stored on a server: the access token lives only in this browser (localStorage).
-import { allShells, FONTS, V as STUDIO_V } from '../assets/shell.js?v=32';
-import { packGrid, packCanvas, packMirror, renderGrid, REF, SHAPES, PRESETS, sizePct, cropRect, croppedRatio, applyCrop } from '../assets/wall.js?v=32';
+import { allShells, FONTS, V as STUDIO_V } from '../assets/shell.js?v=35';
+import { packGrid, packCanvas, packMirror, renderGrid, REF, SHAPES, PRESETS, sizePct, cropRect, croppedRatio, applyCrop } from '../assets/wall.js?v=35';
 
 const CFG_KEY = 'studio.cfg';
 const R2_KEY = 'studio.r2'; // video storage keys (Cloudflare R2) — kept only in this browser
@@ -545,6 +545,7 @@ function viewHome(wrap) {
         </span>
         ${phone ? '' : `<label class="canvastoggle" title="Put tiles exactly where you want them"><input type="checkbox" data-canvas ${S.site.homeCanvas ? 'checked' : ''}> Free canvas</label>`}
         <button class="btn" data-shuffle ${list.length < 2 || !editable || (S.site.homeCanvas && !phone) ? 'disabled' : ''}>Shuffle</button>
+        <button class="btn" data-undo ${S.homeUndo?.length ? '' : 'disabled'} title="Undo the last change (⌘Z / Ctrl+Z)">Undo</button>
         ${phone ? (own
           ? '<span class="pill">Own phone layout</span><button class="btn quiet" data-unown>Follow desktop again</button>'
           : '<button class="btn" data-own>Make a separate phone layout</button>') : ''}
@@ -725,12 +726,17 @@ function viewHome(wrap) {
       ev = null;
       node.classList.remove('freedrag'); document.body.classList.remove('dragging');
       if (moved) {
-        // keep the result: everyone's settled place becomes their saved place
+        // keep the result: the dropped tile takes the spot it was let go on, the others make room
+        // around it; everyone's settled place becomes their saved place
+        lay(c);
         for (const b of lastGrid.boxes) if (b.item.t && list.includes(b.item.t)) b.item.t.pos = [+(b.x / lastU).toFixed(5), +(b.y / lastU).toFixed(5)];
         status();
       }
       S.homeSel = c.t;
-      lay(); inspector();
+      lay();
+      // the tidied result (after everything rose into place) is what gets saved
+      if (moved) for (const b of lastGrid.boxes) if (b.item.t && list.includes(b.item.t)) b.item.t.pos = [+(b.x / lastU).toFixed(5), +(b.y / lastU).toFixed(5)];
+      inspector();
     };
     node.addEventListener('pointermove', onMove);
     node.addEventListener('pointerup', onUp);
@@ -951,7 +957,36 @@ function viewHome(wrap) {
 
   lay();
   inspector();
+
+  // undo: remember the homepage as it was before each action (drag, size, shape, remove…)
+  const snap = () => JSON.stringify({ home: S.site.home, phone: S.site.homePhone ?? null, canvas: !!S.site.homeCanvas });
+  const undoBtn = $('[data-undo]', el);
+  let before = null;
+  const begin = () => { before = snap(); };
+  const end = () => {
+    if (before == null) return;
+    const now = snap();
+    if (now !== before) { (S.homeUndo ||= []).push(before); if (S.homeUndo.length > 50) S.homeUndo.shift(); undoBtn.disabled = false; }
+    before = null;
+  };
+  const later = () => setTimeout(end, 0);
+  for (const down of ['pointerdown', 'keydown']) el.addEventListener(down, (e) => { if (!e.target.closest('[data-undo]') && before == null) begin(); }, true);
+  addEventListener('pointerup', later, true); addEventListener('keyup', later, true);
+  el.addEventListener('change', () => setTimeout(end, 0), true);
+  const undo = () => {
+    const last = S.homeUndo?.pop();
+    if (!last) return;
+    const o = JSON.parse(last);
+    S.site.home = o.home;
+    if (o.phone) S.site.homePhone = o.phone; else delete S.site.homePhone;
+    if (o.canvas) S.site.homeCanvas = true; else delete S.site.homeCanvas;
+    S.homeSel = null; before = null;
+    render(); toast('Undone.', 1500);
+  };
+  undoBtn.onclick = undo;
+
   S.homeKeys = (e) => {
+    if ((e.metaKey || e.ctrlKey) && !e.shiftKey && e.key.toLowerCase() === 'z' && !/INPUT|TEXTAREA/.test(document.activeElement?.tagName)) { e.preventDefault(); undo(); return; }
     if (!S.homeSel || /INPUT|TEXTAREA|SELECT/.test(document.activeElement?.tagName)) return;
     if (editable && (e.key === 'ArrowLeft' || e.key === 'ArrowRight')) { e.preventDefault(); moveTo(S.homeSel, list.indexOf(S.homeSel) + (e.key === 'ArrowLeft' ? -1 : 1)); }
     if (e.key === 'Escape') { S.homeSel = null; lay(); inspector(); }
@@ -959,7 +994,7 @@ function viewHome(wrap) {
   addEventListener('keydown', S.homeKeys);
   const ro = new ResizeObserver(() => soon(lay));
   ro.observe(screen);
-  S.homeWall = { stop: () => { ro.disconnect(); removeEventListener('keydown', S.homeKeys); } };
+  S.homeWall = { stop: () => { ro.disconnect(); removeEventListener('keydown', S.homeKeys); removeEventListener('pointerup', later, true); removeEventListener('keyup', later, true); } };
 }
 
 function viewSettings(wrap) {

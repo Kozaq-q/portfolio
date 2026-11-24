@@ -114,23 +114,38 @@ export function packCanvas(items, { W, seam, vw, vh }, fixed = null) {
     const p = c.pos;
     return { item: c, w, h, x: p ? Math.min(W - w, Math.max(0, p[0] * U)) : null, y: p ? Math.max(0, p[1] * U) : null };
   });
-  const g = settle(boxes, fixed, seam, W);
-  if (!fixed) snapUp(g, seam, W);
-  return g;
+  return compact(settle(boxes, fixed, seam, W), fixed, seam, W);
 }
 
-// tiles that almost sit on the one above (a few pixels off, e.g. placed with another gap) close
-// up to exactly one seam, so the gaps on the page are all equal — also with no gap at all
-function snapUp(g, seam, W) {
-  const SNAP = W * 0.008;
-  const done = [];
-  for (const b of [...g.boxes].sort((a, c) => a.y - c.y || a.x - c.x)) {
-    const above = done.filter((a) => a.x < b.x + b.w - 1 && b.x < a.x + a.w - 1 && a.y + a.h <= b.y + SNAP);
-    const floor = above.length ? Math.max(...above.map((a) => a.y + a.h + seam)) : 0;
-    if (Math.abs(b.y - floor) < SNAP) b.y = floor;
-    done.push(b);
+// Gravity, so the canvas stays tidy: every tile rises as high as it can (top to bottom, the one
+// being dragged stays put) and never leaves a hole above it. A tile below a gap it fits into, at
+// the same size, hops over into that gap. Tiles never get bigger, smaller or cropped.
+export function compact(g, fixed, seam, W) {
+  const TOL = 0.5;
+  const placed = [];
+  const f = fixed && g.boxes.find((b) => b.item === fixed);
+  if (f) placed.push(f);
+  const clash = (x, y, b) => placed.filter((p) => p.x < x + b.w + seam - TOL && x < p.x + p.w + seam - TOL && p.y < y + b.h + seam - TOL && y < p.y + p.h + seam - TOL);
+  const rise = (x, b) => { let y = 0; for (let n = 0; n < 400; n++) { const hit = clash(x, y, b); if (!hit.length) return y; y = Math.max(...hit.map((p) => p.y + p.h + seam)); } return y; };
+  for (const b of g.boxes.filter((q) => q !== f).sort((a, c) => a.y - c.y || a.x - c.x)) {
+    let y = rise(b.x, b), x = b.x;
+    // a gap elsewhere that it fits into: hop only when that is clearly higher (no fidgeting)
+    const xs = new Set([0, W - b.w]);
+    for (const p of placed) { xs.add(p.x); xs.add(p.x + p.w + seam); xs.add(p.x + p.w - b.w); xs.add(p.x - seam - b.w); }
+    // a few pixels off an edge or a neighbour: line it up
+    let near = null;
+    for (const cx of xs) if (cx > -TOL && cx + b.w < W + TOL && Math.abs(cx - b.x) < W * 0.04 && (near == null || Math.abs(cx - b.x) < Math.abs(near - b.x))) near = cx;
+    if (near != null) { const ny = rise(near, b); if (ny <= y + TOL) { x = near; y = ny; } }
+    for (const cx of xs) {
+      if (cx < -TOL || cx + b.w > W + TOL) continue;
+      const cy = rise(cx, b);
+      if (cy < y - Math.max(40, b.h * 0.3)) { y = cy; x = cx; }
+    }
+    b.x = x; b.y = y;
+    placed.push(b);
   }
   g.height = g.boxes.reduce((m, b) => Math.max(m, b.y + b.h), 0);
+  return g;
 }
 
 // push overlapping tiles down (the fixed one — the tile being dragged — keeps its place)
