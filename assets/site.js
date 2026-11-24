@@ -1,5 +1,5 @@
-import { mountWall, PHONE, cropRect, croppedRatio, applyCrop } from './wall.js?v=31';
-import { FONTS } from './shell.js?v=31';
+import { mountWall, PHONE, cropRect, croppedRatio, applyCrop } from './wall.js?v=32';
+import { FONTS } from './shell.js?v=32';
 
 const doc = document.documentElement;
 const ROOT = doc.dataset.root || '';
@@ -213,7 +213,7 @@ function home(site, main) {
     return phone;
   };
   const w = document.createElement('div');
-  w.className = 'wall';
+  w.className = 'wall home';
   main.append(w);
   mountWall(w, items, { grid: true, canvas: !!site.homeCanvas });
 
@@ -325,4 +325,10 @@ function fontTry() {
   use(f);
 }
 
-if (document.getElementById('app')) { main(); fontTry(); }
+/* try other gaps between the homepage frames without publishing: ?gap=12 (pixels) */
+function gapTry() {
+  const g = parseFloat(new URLSearchParams(location.search).get('gap'));
+  if (g >= 0 && g <= 80) doc.style.setProperty('--home-seam', `${g}px`);
+}
+
+if (document.getElementById('app')) { gapTry(); main(); fontTry(); }

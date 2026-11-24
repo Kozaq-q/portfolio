@@ -6,7 +6,8 @@
   --line: #dcdad4;
   --ph: #e4e2dc;          /* behind media while loading */
   --pad: 32px;
-  --seam: 3px;            /* gap between frames on the wall */
+  --seam: 3px;            /* gap between frames on the project pages */
+  --home-seam: 0px;       /* homepage: frames touch, no gaps */
   --ease: cubic-bezier(.2, .7, .2, 1);
   /* type */
   --font: "Schibsted Grotesk", "Helvetica Neue", Helvetica, Arial, sans-serif;
@@ -86,6 +87,7 @@ body.locked .bar { mix-blend-mode: normal; color: var(--fg); }
 /* ---------- wall: justified rows, edge to edge ---------- */
 .wall { display: flex; flex-direction: column; gap: var(--seam); padding: var(--seam); }
 .row { display: flex; gap: var(--seam); }
+.wall.home { gap: var(--home-seam); padding: var(--home-seam); }
 .cell { position: relative; display: block; min-width: 0; container-type: inline-size; -webkit-tap-highlight-color: transparent; }
 .cell .frame { width: 100%; height: 100%; }
 .label {

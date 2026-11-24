@@ -114,7 +114,23 @@ export function packCanvas(items, { W, seam, vw, vh }, fixed = null) {
     const p = c.pos;
     return { item: c, w, h, x: p ? Math.min(W - w, Math.max(0, p[0] * U)) : null, y: p ? Math.max(0, p[1] * U) : null };
   });
-  return settle(boxes, fixed, seam, W);
+  const g = settle(boxes, fixed, seam, W);
+  if (!fixed) snapUp(g, seam, W);
+  return g;
+}
+
+// tiles that almost sit on the one above (a few pixels off, e.g. placed with another gap) close
+// up to exactly one seam, so the gaps on the page are all equal — also with no gap at all
+function snapUp(g, seam, W) {
+  const SNAP = W * 0.008;
+  const done = [];
+  for (const b of [...g.boxes].sort((a, c) => a.y - c.y || a.x - c.x)) {
+    const above = done.filter((a) => a.x < b.x + b.w - 1 && b.x < a.x + a.w - 1 && a.y + a.h <= b.y + SNAP);
+    const floor = above.length ? Math.max(...above.map((a) => a.y + a.h + seam)) : 0;
+    if (Math.abs(b.y - floor) < SNAP) b.y = floor;
+    done.push(b);
+  }
+  g.height = g.boxes.reduce((m, b) => Math.max(m, b.y + b.h), 0);
 }
 
 // push overlapping tiles down (the fixed one — the tile being dragged — keeps its place)
@@ -163,10 +179,12 @@ export function renderGrid(el, grid, seam, k = 1) {
     const s = b.item.el.style;
     s.position = 'absolute';
     s.flex = '';
-    s.left = `${(b.x + seam) * k}px`;
-    s.top = `${(b.y + seam) * k}px`;
-    s.width = `${b.w * k}px`;
-    s.height = `${b.h * k}px`;
+    // whole pixels, so neighbours meet exactly (no hairlines from half-pixel edges)
+    const l = Math.round((b.x + seam) * k), t = Math.round((b.y + seam) * k);
+    s.left = `${l}px`;
+    s.top = `${t}px`;
+    s.width = `${Math.round((b.x + b.w + seam) * k) - l}px`;
+    s.height = `${Math.round((b.y + b.h + seam) * k) - t}px`;
     if (b.item.el.parentNode !== el) el.append(b.item.el);
   }
 }
@@ -234,7 +252,7 @@ export function renderRows(el, rows, k = 1) {
 export function mountWall(el, cells, { grid = false, canvas = false } = {}) {
   let lastKey = '', lastList = null;
   const layout = () => {
-    const seam = parseFloat(getComputedStyle(el).rowGap) || 3;
+    const g = parseFloat(getComputedStyle(el).rowGap), seam = Number.isFinite(g) ? g : 3;
     if (grid) el.style.padding = '0';
     const pad = grid ? seam : parseFloat(getComputedStyle(el).paddingLeft) || 0;
     const W = el.clientWidth - pad * 2;

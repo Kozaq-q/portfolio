@@ -1,8 +1,8 @@
 // Studio — content editor for the portfolio.
 // Edits content/site.json and media in the GitHub repository through the GitHub API.
 // Nothing is stored on a server: the access token lives only in this browser (localStorage).
-import { allShells, FONTS, V as STUDIO_V } from '../assets/shell.js?v=31';
-import { packGrid, packCanvas, packMirror, renderGrid, REF, SHAPES, PRESETS, sizePct, cropRect, croppedRatio, applyCrop } from '../assets/wall.js?v=31';
+import { allShells, FONTS, V as STUDIO_V } from '../assets/shell.js?v=32';
+import { packGrid, packCanvas, packMirror, renderGrid, REF, SHAPES, PRESETS, sizePct, cropRect, croppedRatio, applyCrop } from '../assets/wall.js?v=32';
 
 const CFG_KEY = 'studio.cfg';
 const R2_KEY = 'studio.r2'; // video storage keys (Cloudflare R2) — kept only in this browser
@@ -32,6 +32,7 @@ const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '
 const h = (html) => { const t = document.createElement('template'); t.innerHTML = html.trim(); return t.content.firstElementChild; };
 const slugify = (s) => String(s).normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/ł/g, 'l').replace(/Ł/g, 'L')
   .toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'project';
+const HOME_SEAM = 0; // gap between homepage frames — same as --home-seam in site.css
 const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
 // paths: 'media/…' live in the GitHub repo, 'r2:media/…' in the video storage (Cloudflare R2)
 const mediaBase = () => (S.site?.settings.mediaBase || '').replace(/\/*$/, '/');
@@ -627,7 +628,7 @@ function viewHome(wrap) {
   let lastGrid = null, lastU = 1;
   const lay = (fixed = null) => {
     vp = phone ? { vw: 390, vh: 844 } : { vw: Math.max(1024, innerWidth), vh: Math.max(560, innerHeight) };
-    const seam = phone ? 2 : 3;
+    const seam = HOME_SEAM;
     k = screen.clientWidth / vp.vw;
     // shots of hidden projects keep their place but are left out, as on the site
     const cells = list.filter((t) => !S.site.projects.find((x) => x.slug === t.p)?.hidden).map(tileFor);
@@ -689,7 +690,7 @@ function viewHome(wrap) {
   function canvasDrag(c, e) {
     const node = c.el;
     try { node.setPointerCapture(e.pointerId); } catch {}
-    const seam = phone ? 2 : 3, W = lastU - seam;
+    const seam = HOME_SEAM, W = lastU - seam;
     const hr = hw.getBoundingClientRect();
     const toV = (ev) => [(ev.clientX - hr.left) / k - seam, (ev.clientY - hr.top) / k - seam];
     const me = lastGrid.boxes.find((b) => b.item === c);
