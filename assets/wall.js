@@ -107,6 +107,13 @@ export function packCanvas(items, { W, seam, vw, vh }, fixed = null) {
     const key = (c) => (c.pos ? c.pos[1] * 1e4 + c.pos[0] : Infinity);
     return packGrid([...items].sort((a, b) => key(a) - key(b)), { W, seam, vw, vh });
   }
+  // always laid out on the reference desktop, then scaled to this screen: every screen (and the
+  // phone mirror) gets exactly the same arrangement, only bigger or smaller
+  const sc = W / REF.W;
+  if (Math.abs(sc - 1) > 1e-6) {
+    const g = packCanvas(items, { W: REF.W, seam: seam / sc, vw: REF.vw, vh: REF.vh }, fixed);
+    return { height: g.height * sc, boxes: g.boxes.map((b) => Object.assign(b, { x: b.x * sc, y: b.y * sc, w: b.w * sc, h: b.h * sc })) };
+  }
   const U = W + seam;
   const boxes = items.map((c) => {
     const w = Math.min(W, (sizePct(c, false) / 100) * U - seam);
@@ -122,11 +129,24 @@ export function packCanvas(items, { W, seam, vw, vh }, fixed = null) {
 // the same size, hops over into that gap. Tiles never get bigger, smaller or cropped.
 export function compact(g, fixed, seam, W) {
   const TOL = 0.5;
+  // bottoms that differ by a hair (photo proportions) count as one line: the tile below lies flush
+  // on the higher one and covers those few pixels instead of leaving a thin stripe of background
+  const VT = W * 0.005;
   const placed = [];
   const f = fixed && g.boxes.find((b) => b.item === fixed);
   if (f) placed.push(f);
-  const clash = (x, y, b) => placed.filter((p) => p.x < x + b.w + seam - TOL && x < p.x + p.w + seam - TOL && p.y < y + b.h + seam - TOL && y < p.y + p.h + seam - TOL);
-  const rise = (x, b) => { let y = 0; for (let n = 0; n < 400; n++) { const hit = clash(x, y, b); if (!hit.length) return y; y = Math.max(...hit.map((p) => p.y + p.h + seam)); } return y; };
+  const clash = (x, y, b) => placed.filter((p) => p.x < x + b.w + seam - TOL && x < p.x + p.w + seam - TOL && p.y < y + b.h + seam - VT && y < p.y + p.h + seam - VT);
+  const rise = (x, b) => {
+    let y = 0;
+    for (let n = 0; n < 400; n++) {
+      const hit = clash(x, y, b);
+      if (!hit.length) break;
+      y = Math.max(...hit.map((p) => p.y + p.h + seam));
+    }
+    // rest on the highest of the bottoms just under it, when the others are only a hair lower
+    const under = placed.filter((p) => p.x < x + b.w - TOL && x < p.x + p.w - TOL && Math.abs(p.y + p.h + seam - y) < VT);
+    return under.length ? Math.min(...under.map((p) => p.y + p.h + seam)) : y;
+  };
   for (const b of g.boxes.filter((q) => q !== f).sort((a, c) => a.y - c.y || a.x - c.x)) {
     let y = rise(b.x, b), x = b.x;
     // a gap elsewhere that it fits into: hop only when that is clearly higher (no fidgeting)
