@@ -25,75 +25,6 @@
   },
   "projects": [
     {
-      "slug": "sonny-boy",
-      "title": "Sonny Boy ",
-      "type": "Short film",
-      "year": 2023,
-      "crew": [
-        {
-          "role": "Director",
-          "name": "Paweł Kozak"
-        },
-        {
-          "role": "Director of photography",
-          "name": "Paweł Kozak"
-        }
-      ],
-      "description": "",
-      "festivals": [],
-      "film": "",
-      "media": [
-        {
-          "id": "mwusufqa09dn",
-          "type": "video",
-          "src": "r2:media/sonny-boy/mwusufkawuat-sonnyboy6-portfolio.mov",
-          "poster": "media/sonny-boy/mwusufkawuat-sonnyboy6-portfolio-poster.webp",
-          "ratio": 1.3724
-        },
-        {
-          "id": "mwusuld2i0sm",
-          "type": "video",
-          "src": "r2:media/sonny-boy/mwusul7ugcuw-sonnyboy1-portfolio.mov",
-          "poster": "media/sonny-boy/mwusul7ugcuw-sonnyboy1-portfolio-poster.webp",
-          "ratio": 1.3724
-        },
-        {
-          "id": "mwusulk0txr2",
-          "type": "image",
-          "src": "media/sonny-boy/mwusuld26lu7-screenshot-2026-11-24-at-15-29-12.webp",
-          "ratio": 1.3733
-        },
-        {
-          "id": "mwusulp2sbet",
-          "type": "video",
-          "src": "r2:media/sonny-boy/mwusulk0m6uc-sonnyboy2-portfolio.mov",
-          "poster": "media/sonny-boy/mwusulk0m6uc-sonnyboy2-portfolio-poster.webp",
-          "ratio": 1.3724
-        },
-        {
-          "id": "mwusulv0j8ul",
-          "type": "video",
-          "src": "r2:media/sonny-boy/mwusulp2u2dw-sonnyboy3-portfolio.mov",
-          "poster": "media/sonny-boy/mwusulp2u2dw-sonnyboy3-portfolio-poster.webp",
-          "ratio": 1.3724
-        },
-        {
-          "id": "mwusum1e6ow4",
-          "type": "video",
-          "src": "r2:media/sonny-boy/mwusulv0n8f4-sonnyboy4-portfolio.mov",
-          "poster": "media/sonny-boy/mwusulv0n8f4-sonnyboy4-portfolio-poster.webp",
-          "ratio": 1.3724
-        },
-        {
-          "id": "mwusum7272m9",
-          "type": "video",
-          "src": "r2:media/sonny-boy/mwusum1fewso-sonnyboy5-portfolio.mov",
-          "poster": "media/sonny-boy/mwusum1fewso-sonnyboy5-portfolio-poster.webp",
-          "ratio": 1.3724
-        }
-      ]
-    },
-    {
       "slug": "profundum",
       "title": "Profundum",
       "type": "Fashion film",
@@ -396,6 +327,75 @@
           "ratio": 1.3724
         }
       ]
+    },
+    {
+      "slug": "sonny-boy",
+      "title": "Sonny Boy ",
+      "type": "Short film",
+      "year": 2023,
+      "crew": [
+        {
+          "role": "Director",
+          "name": "Paweł Kozak"
+        },
+        {
+          "role": "Director of photography",
+          "name": "Paweł Kozak"
+        }
+      ],
+      "description": "",
+      "festivals": [],
+      "film": "",
+      "media": [
+        {
+          "id": "mwusufqa09dn",
+          "type": "video",
+          "src": "r2:media/sonny-boy/mwusufkawuat-sonnyboy6-portfolio.mov",
+          "poster": "media/sonny-boy/mwusufkawuat-sonnyboy6-portfolio-poster.webp",
+          "ratio": 1.3724
+        },
+        {
+          "id": "mwusuld2i0sm",
+          "type": "video",
+          "src": "r2:media/sonny-boy/mwusul7ugcuw-sonnyboy1-portfolio.mov",
+          "poster": "media/sonny-boy/mwusul7ugcuw-sonnyboy1-portfolio-poster.webp",
+          "ratio": 1.3724
+        },
+        {
+          "id": "mwusulk0txr2",
+          "type": "image",
+          "src": "media/sonny-boy/mwusuld26lu7-screenshot-2026-11-24-at-15-29-12.webp",
+          "ratio": 1.3733
+        },
+        {
+          "id": "mwusulp2sbet",
+          "type": "video",
+          "src": "r2:media/sonny-boy/mwusulk0m6uc-sonnyboy2-portfolio.mov",
+          "poster": "media/sonny-boy/mwusulk0m6uc-sonnyboy2-portfolio-poster.webp",
+          "ratio": 1.3724
+        },
+        {
+          "id": "mwusulv0j8ul",
+          "type": "video",
+          "src": "r2:media/sonny-boy/mwusulp2u2dw-sonnyboy3-portfolio.mov",
+          "poster": "media/sonny-boy/mwusulp2u2dw-sonnyboy3-portfolio-poster.webp",
+          "ratio": 1.3724
+        },
+        {
+          "id": "mwusum1e6ow4",
+          "type": "video",
+          "src": "r2:media/sonny-boy/mwusulv0n8f4-sonnyboy4-portfolio.mov",
+          "poster": "media/sonny-boy/mwusulv0n8f4-sonnyboy4-portfolio-poster.webp",
+          "ratio": 1.3724
+        },
+        {
+          "id": "mwusum7272m9",
+          "type": "video",
+          "src": "r2:media/sonny-boy/mwusum1fewso-sonnyboy5-portfolio.mov",
+          "poster": "media/sonny-boy/mwusum1fewso-sonnyboy5-portfolio-poster.webp",
+          "ratio": 1.3724
+        }
+      ]
     }
   ],
   "home": [
@@ -594,6 +594,18 @@
     {
       "p": "mania",
       "m": "mwuseusgfkzj"
+    },
+    {
+      "p": "sonny-boy",
+      "m": "mwusufqa09dn"
+    },
+    {
+      "p": "sonny-boy",
+      "m": "mwusum1e6ow4"
+    },
+    {
+      "p": "sonny-boy",
+      "m": "mwusulv0j8ul"
     }
   ],
   "homeCanvas": true
