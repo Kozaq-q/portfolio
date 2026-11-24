@@ -1,8 +1,8 @@
 // Studio — content editor for the portfolio.
 // Edits content/site.json and media in the GitHub repository through the GitHub API.
 // Nothing is stored on a server: the access token lives only in this browser (localStorage).
-import { allShells, FONTS, V as STUDIO_V } from '../assets/shell.js?v=27';
-import { packGrid, packCanvas, packMirror, renderGrid, REF, SHAPES, PRESETS, sizePct, cropRect, croppedRatio, applyCrop } from '../assets/wall.js?v=27';
+import { allShells, FONTS, V as STUDIO_V } from '../assets/shell.js?v=29';
+import { packGrid, packCanvas, packMirror, renderGrid, REF, SHAPES, PRESETS, sizePct, cropRect, croppedRatio, applyCrop } from '../assets/wall.js?v=29';
 
 const CFG_KEY = 'studio.cfg';
 const R2_KEY = 'studio.r2'; // video storage keys (Cloudflare R2) — kept only in this browser
@@ -416,7 +416,7 @@ function editor(box, p) {
       <label><span>Full film or trailer — Vimeo or YouTube link (optional)</span><input data-k="film" placeholder="https://vimeo.com/…"></label>
 
       <div>
-        <h3>Shots &amp; stills — the first one opens the project page</h3>
+        <h3>Shots &amp; stills — the one marked Cover opens the project page</h3>
         <div class="media">
           ${p.media.map((m, i) => mediaCard(p, m, i)).join('')}
           <label class="drop"><input type="file" accept="image/*,.heic,.heif,video/mp4,video/webm,video/quicktime" multiple hidden>Add photos or clips<br>click or drop files</label>
@@ -450,9 +450,11 @@ function editor(box, p) {
     const m = p.media[+b.dataset.mrm];
     if (!confirm('Remove this from the project?')) return;
     p.media.splice(+b.dataset.mrm, 1);
+    if (p.cover === m.id) delete p.cover;
     S.site.home = S.site.home.filter((t) => !(t.p === p.slug && t.m === m.id));
     forgetMedia(m); render();
   }));
+  el.querySelectorAll('[data-cover]').forEach((c) => (c.onchange = () => { if (c.checked) { p.cover = c.dataset.cover; render(); } }));
   el.querySelectorAll('[data-onhome]').forEach((c) => (c.onchange = () => {
     const id = c.dataset.onhome;
     if (c.checked) { S.site.home.push({ p: p.slug, m: id }); S.site.homePhone?.push({ p: p.slug, m: id }); }
@@ -479,17 +481,21 @@ function editor(box, p) {
 function mediaCard(p, m, i) {
   const onHome = S.site.home.some((t) => t.p === p.slug && t.m === m.id);
   const isNew = S.files.has(m.src) && !S.files.get(m.src).uploaded;
+  const isCover = (p.media.find((x) => x.id === p.cover) || p.media[0]) === m;
   const thumb = m.type === 'video'
     ? `<video src="${esc(mediaUrl(m.src))}" poster="${esc(mediaUrl(m.poster))}" muted loop playsinline preload="none" onmouseenter="this.play()" onmouseleave="this.pause()"></video>`
     : `<img src="${esc(mediaUrl(m.src))}" alt="" loading="lazy">`;
   return `
     <div class="m">
-      <div class="thumb">${thumb}<span class="badge">${i === 0 ? 'Opening · ' : ''}${m.type === 'video' ? 'Clip' : 'Still'}</span>${isNew ? '<span class="badge new">new</span>' : ''}</div>
+      <div class="thumb">${thumb}<span class="badge">${isCover ? 'Cover · ' : ''}${m.type === 'video' ? 'Clip' : 'Still'}</span>${isNew ? '<span class="badge new">new</span>' : ''}</div>
       <div class="bar">
+        <span class="opts">
         <label><input type="checkbox" data-onhome="${esc(m.id)}" ${onHome ? 'checked' : ''}> Homepage</label>
+        <label title="This shot opens the project page and stands for it in the Projects list"><input type="radio" name="cover-${esc(p.slug)}" data-cover="${esc(m.id)}" ${isCover ? 'checked' : ''}> Cover</label>
+        </span><span class="acts">
         <button class="btn quiet" data-mleft="${i}" ${i === 0 ? 'disabled' : ''} aria-label="Move earlier">←</button>
         <button class="btn quiet" data-mright="${i}" ${i === p.media.length - 1 ? 'disabled' : ''} aria-label="Move later">→</button>
-        <button class="btn quiet" data-mrm="${i}" aria-label="Remove">×</button>
+        <button class="btn quiet" data-mrm="${i}" aria-label="Remove">×</button></span>
       </div>
     </div>`;
 }

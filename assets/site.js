@@ -1,5 +1,5 @@
-import { mountWall, PHONE, cropRect, croppedRatio, applyCrop } from './wall.js?v=27';
-import { FONTS } from './shell.js?v=27';
+import { mountWall, PHONE, cropRect, croppedRatio, applyCrop } from './wall.js?v=29';
+import { FONTS } from './shell.js?v=29';
 
 const doc = document.documentElement;
 const ROOT = doc.dataset.root || '';
@@ -13,7 +13,7 @@ const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '
 let MEDIA = '';
 const src = (p) => (!p ? '' : /^(https?:|blob:|data:)/.test(p) ? p : p.startsWith('r2:') ? MEDIA + p.slice(3) : ROOT + p);
 const projectUrl = (slug) => `${ROOT}work/${slug}/`;
-// hidden projects stay in content but are left out of the index, the homepage and "next project"
+// hidden projects stay in content but are left out of the index and the homepage
 const listed = (site) => site.projects.filter((p) => !p.hidden);
 const kind = (p) => [p.type, p.year].filter(Boolean).join(', ');
 const h = (html) => { const t = document.createElement('template'); t.innerHTML = html.trim(); return t.content.firstElementChild; };
@@ -110,7 +110,7 @@ function chrome(site) {
     </div>`);
   const preview = index.querySelector('.preview');
   const previews = listed(site).map((p) => {
-    const m = p.media.find((x) => x.type === 'video') || p.media[0];
+    const m = p.cover ? coverOf(p) : p.media.find((x) => x.type === 'video') || p.media[0];
     if (!m) return null;
     const f = frame(m, { observe: false });
     f.style.aspectRatio = m.ratio;
@@ -227,11 +227,15 @@ function home(site, main) {
     </footer>`));
 }
 
+// the shot that stands for the project (chosen in Studio; otherwise the first one)
+const coverOf = (p) => (p.media || []).find((m) => m.id === p.cover) || (p.media || [])[0];
+
 function project(site, main) {
   const i = site.projects.findIndex((x) => x.slug === SLUG);
   const p = site.projects[i];
   if (!p) { main.append(h(`<p class="intro">Project not found.&nbsp;<a href="${HOME}">Back to the work</a></p>`)); return; }
-  const [first, ...rest] = p.media || [];
+  const first = coverOf(p);
+  const rest = (p.media || []).filter((m) => m !== first);
   const crew = (p.crew || []).filter((c) => c.role || c.name);
 
   if (first) {
@@ -268,17 +272,6 @@ function project(site, main) {
     w.className = 'wall';
     main.append(w);
     mountWall(w, rest.map((m) => cell(m, p, false)));
-  }
-
-  // next visible project after this one (wrapping round); a hidden page still links onward
-  const order = site.projects;
-  let next = null;
-  for (let k = 1; k < order.length && !next; k++) { const q = order[(i + k) % order.length]; if (!q.hidden) next = q; }
-  if (next && next !== p) {
-    const m = next.media.find((x) => x.type === 'video') || next.media[0];
-    const a = h(`<a class="next" href="${projectUrl(next.slug)}"><span class="txt"><span>Next project</span><b>${esc(next.title)}</b></span></a>`);
-    if (m) a.prepend(frame(m));
-    main.append(a);
   }
 }
 

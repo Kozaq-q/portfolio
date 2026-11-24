@@ -3,7 +3,7 @@
 // The page content itself is rendered by assets/site.js from content/site.json.
 
 // Bump when assets/*.js or *.css change so browsers fetch the new code instead of a cached copy.
-export const V = '27';
+export const V = '29';
 
 // Typefaces the site can use (Google Fonts). Chosen in Studio → Settings.
 const G = 'https://fonts.googleapis.com/css2?display=swap&family=';
@@ -32,7 +32,7 @@ export function pageShell(site, project) {
   const description = project
     ? [project.type, project.year].filter(Boolean).join(', ') + (project.description ? '. ' + project.description : '')
     : s.description || '';
-  const cover = project ? project.media?.[0] : null;
+  const cover = project ? (project.media || []).find((m) => m.id === project.cover) || project.media?.[0] : null;
   const imgPath = cover ? (cover.type === 'video' ? cover.poster : cover.src) : '';
   const image = !imgPath ? '' : imgPath.startsWith('r2:') ? (s.mediaBase ? `${s.mediaBase.replace(/\/+$/, '')}/${imgPath.slice(3)}` : '') : base ? `${base}/${imgPath}` : '';
   const canonical = base ? `${base}/${project ? `work/${project.slug}/` : ''}` : '';
