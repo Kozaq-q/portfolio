@@ -91,18 +91,17 @@ body.locked .bar { mix-blend-mode: normal; color: var(--fg); }
 .label {
   position: absolute; left: 18px; right: 18px; bottom: 15px;
   display: flex; justify-content: space-between; gap: 16px; align-items: baseline;
-  color: #fff; font-size: 13px; line-height: 1.3;
+  color: #fff; font-size: 11px; line-height: 1.3; letter-spacing: .01em;
   text-shadow: 0 0 20px rgba(0, 0, 0, .35);
   opacity: 0; transform: translateY(5px);
   transition: opacity .45s var(--ease), transform .45s var(--ease);
   pointer-events: none;
 }
-.label i { font-style: normal; opacity: .72; font-size: 12px; }
 a.cell:hover .label, a.cell:focus-visible .label { opacity: 1; transform: none; }
 /* touch screens: names stay hidden, like on desktop; they show while a tile is pressed */
 @media (hover: none) { a.cell:hover .label { opacity: 0; transform: translateY(5px); } a.cell:active .label { opacity: 1; transform: none; } }
-/* narrow tiles: title only */
-@container (max-width: 230px) { .label i { display: none; } .label { left: 10px; right: 10px; bottom: 9px; } }
+/* narrow tiles: caption closer to the corner */
+@container (max-width: 230px) { .label { left: 10px; right: 10px; bottom: 9px; } }
 /* very small tiles (phones showing the desktop layout): no caption */
 @container (max-width: 150px) { .label { display: none; } }
 
@@ -215,7 +214,7 @@ a.cell:hover .label, a.cell:focus-visible .label { opacity: 1; transform: none; 
   body { font-size: 14px; }
   .bar { padding: 16px var(--pad); }
   .bar nav { gap: 18px; }
-  .label { left: 12px; right: 12px; bottom: 10px; font-size: 12px; }
+  .label { left: 12px; right: 12px; bottom: 10px; font-size: 10.5px; }
   .intro { padding: 32px var(--pad) 56px; }
   .intro h1, .intro .about { grid-column: 1 / -1; }
   .intro .about { padding-top: 28px; }

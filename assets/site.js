@@ -1,5 +1,5 @@
-import { mountWall, PHONE, cropRect, croppedRatio, applyCrop } from './wall.js?v=29';
-import { FONTS } from './shell.js?v=29';
+import { mountWall, PHONE, cropRect, croppedRatio, applyCrop } from './wall.js?v=30';
+import { FONTS } from './shell.js?v=30';
 
 const doc = document.documentElement;
 const ROOT = doc.dataset.root || '';
@@ -76,14 +76,14 @@ function cell(m, p, linked = true, opt = {}) {
   el.className = 'cell';
   if (linked) {
     el.href = projectUrl(p.slug);
-    el.setAttribute('aria-label', `${p.title}, ${kind(p)}`);
+    el.setAttribute('aria-label', p.title);
   }
   const f = frame(m);
   // crop chosen in Studio (homepage only): show just that part of the shot
   const rect = cropRect(opt, m.ratio || 16 / 9);
   if (rect) applyCrop(f.firstElementChild, rect);
   el.append(f);
-  if (linked) el.append(h(`<span class="label"><span>${esc(p.title)}</span><i>${esc(kind(p))}</i></span>`));
+  if (linked) el.append(h(`<span class="label"><span>${esc(p.title)}</span></span>`));
   // no size = automatic (desktop treats it as M; phones pick full width or half by shape)
   return { el, ratio: croppedRatio(rect, m.ratio || 16 / 9), size: opt.s || '', w: opt.w, br: !!opt.br, pos: opt.pos };
 }
