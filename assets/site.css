@@ -131,6 +131,8 @@ a.cell:hover .label, a.cell:focus-visible .label { opacity: 1; transform: none; 
 }
 .intro .about { grid-column: 9 / span 4; padding-top: 6px; }
 .intro .about p { margin: 0 0 1em; }
+/* photo journal: no hero, so the title clears the header itself */
+.intro.journal { padding-top: 148px; }
 .credits { margin: 28px 0 0; display: grid; grid-template-columns: auto 1fr; gap: 3px 20px; font-size: 13px; }
 .credits dt { color: var(--mute); white-space: nowrap; }
 .credits dd { margin: 0; }
@@ -216,6 +218,7 @@ a.cell:hover .label, a.cell:focus-visible .label { opacity: 1; transform: none; 
   .bar nav { gap: 18px; }
   .label { left: 12px; right: 12px; bottom: 10px; font-size: 10.5px; }
   .intro { padding: 32px var(--pad) 56px; }
+  .intro.journal { padding-top: 104px; }
   .intro h1, .intro .about { grid-column: 1 / -1; }
   .intro .about { padding-top: 28px; }
   .sheet { padding-top: 76px; }

@@ -1,5 +1,5 @@
-import { mountWall, PHONE, cropRect, croppedRatio, applyCrop } from './wall.js?v=30';
-import { FONTS } from './shell.js?v=30';
+import { mountWall, PHONE, cropRect, croppedRatio, applyCrop } from './wall.js?v=31';
+import { FONTS } from './shell.js?v=31';
 
 const doc = document.documentElement;
 const ROOT = doc.dataset.root || '';
@@ -75,7 +75,8 @@ function cell(m, p, linked = true, opt = {}) {
   const el = document.createElement(linked ? 'a' : 'div');
   el.className = 'cell';
   if (linked) {
-    el.href = projectUrl(p.slug);
+    // photo-journal tiles open the journal at that very photo
+    el.href = projectUrl(p.slug) + (p.journal ? `#${m.id}` : '');
     el.setAttribute('aria-label', p.title);
   }
   const f = frame(m);
@@ -234,6 +235,7 @@ function project(site, main) {
   const i = site.projects.findIndex((x) => x.slug === SLUG);
   const p = site.projects[i];
   if (!p) { main.append(h(`<p class="intro">Project not found.&nbsp;<a href="${HOME}">Back to the work</a></p>`)); return; }
+  if (p.journal) return journal(p, main);
   const first = coverOf(p);
   const rest = (p.media || []).filter((m) => m !== first);
   const crew = (p.crew || []).filter((c) => c.role || c.name);
@@ -272,6 +274,26 @@ function project(site, main) {
     w.className = 'wall';
     main.append(w);
     mountWall(w, rest.map((m) => cell(m, p, false)));
+  }
+}
+
+// photo journal: photos that belong to no film; just the title and the photos
+function journal(p, main) {
+  main.append(h(`
+    <section class="intro journal">
+      <h1>${esc(p.title)}</h1>
+      ${p.description ? `<div class="about">${p.description.split(/\n{2,}/).filter(Boolean).map((t) => `<p>${esc(t)}</p>`).join('')}</div>` : ''}
+    </section>`));
+  if (!p.media?.length) return;
+  const w = document.createElement('div');
+  w.className = 'wall';
+  main.append(w);
+  mountWall(w, p.media.map((m) => { const c = cell(m, p, false); c.el.id = m.id; return c; }));
+  // opened from a homepage tile: bring that photo into view once the wall is laid out
+  const id = decodeURIComponent(location.hash.slice(1));
+  if (id) {
+    const go = () => document.getElementById(id)?.scrollIntoView({ block: 'center' });
+    setTimeout(go, 120); addEventListener('load', go, { once: true });
   }
 }
 

@@ -1,8 +1,8 @@
 // Studio — content editor for the portfolio.
 // Edits content/site.json and media in the GitHub repository through the GitHub API.
 // Nothing is stored on a server: the access token lives only in this browser (localStorage).
-import { allShells, FONTS, V as STUDIO_V } from '../assets/shell.js?v=30';
-import { packGrid, packCanvas, packMirror, renderGrid, REF, SHAPES, PRESETS, sizePct, cropRect, croppedRatio, applyCrop } from '../assets/wall.js?v=30';
+import { allShells, FONTS, V as STUDIO_V } from '../assets/shell.js?v=31';
+import { packGrid, packCanvas, packMirror, renderGrid, REF, SHAPES, PRESETS, sizePct, cropRect, croppedRatio, applyCrop } from '../assets/wall.js?v=31';
 
 const CFG_KEY = 'studio.cfg';
 const R2_KEY = 'studio.r2'; // video storage keys (Cloudflare R2) — kept only in this browser
@@ -275,7 +275,9 @@ async function addMedia(p, fileList) {
     try {
       if (isImage(file)) {
         const img = await processImage(file);
-        p.media.push({ id: uid(), type: 'image', src: addFile(`${base}.${img.ext}`, img.blob), ratio: +img.ratio.toFixed(4) });
+        const id = uid();
+        p.media.push({ id, type: 'image', src: addFile(`${base}.${img.ext}`, img.blob), ratio: +img.ratio.toFixed(4) });
+        if (p.journal) { S.site.home.push({ p: p.slug, m: id }); S.site.homePhone?.push({ p: p.slug, m: id }); }
       } else if (file.type.startsWith('video/') || /\.(mp4|mov|webm|m4v)$/i.test(file.name)) {
         const big = r2Ready();
         const max = big ? 2048 : 95, warn = big ? 60 : 25;
@@ -369,7 +371,7 @@ function viewProjects(wrap) {
         <ul class="list">${ps.map((p, i) => `
           <li class="${p.hidden ? 'is-hidden' : ''}"><button class="pick" data-pick="${esc(p.slug)}" aria-current="${p.slug === S.current}">${esc(p.title || 'Untitled')}<small>${esc(p.year)}</small>${p.hidden ? '<em>hidden</em>' : ''}</button>${updown(i, ps.length)}</li>`).join('')}
         </ul>
-        <p><button class="btn" data-add>+ New project</button></p>
+        <p><button class="btn" data-add>+ New project</button>${ps.some((p) => p.journal) ? '' : ' <button class="btn quiet" data-journal>+ Photo journal</button>'}</p>
         <p class="hint">The order here is the order of the index on the site.</p>
       </div>
       <div class="editor"></div>
@@ -384,6 +386,14 @@ function viewProjects(wrap) {
     S.current = slug;
     render();
   };
+  const jb = $('[data-journal]', el);
+  if (jb) jb.onclick = () => {
+    let slug = 'photo-journal', n = 2;
+    while (ps.some((p) => p.slug === slug)) slug = `photo-journal-${n++}`;
+    ps.push({ slug, journal: true, title: 'Photo journal', type: 'Photographs', year: '', crew: [], description: '', festivals: [], film: '', media: [] });
+    S.current = slug;
+    render();
+  };
   wrap.append(el);
   if (S.current) editor($('.editor', el), project());
   else $('.editor', el).append(h('<p class="empty">No projects yet.</p>'));
@@ -394,16 +404,19 @@ function editor(box, p) {
     <div class="form">
       <h2>${esc(p.title || 'Untitled')}</h2>
       <label class="hidecheck ${p.hidden ? 'on' : ''}"><input type="checkbox" data-hide ${p.hidden ? 'checked' : ''}>
-        <span><b>Hidden</b> — not shown on the site<small>Leaves the homepage, the index and “next project”. Nothing is deleted: untick to bring it back. The page still opens for anyone who has its direct link.</small></span></label>
-      <div class="row">
+        <span><b>Hidden</b> — not shown on the site<small>Leaves the homepage and the Projects list. Nothing is deleted: untick to bring it back. The page still opens for anyone who has its direct link.</small></span></label>
+      ${p.journal ? `<p class="hint">Photos that belong to no film. Tick “Homepage” to weave a photo into the homepage — clicking it there opens this journal at that photo.</p>
+      <label><span>Title</span><input data-k="title"></label>` : `<div class="row">
         <label><span>Title</span><input data-k="title"></label>
         <label><span>Type (small print on the page)</span><input data-k="type" list="types"></label>
         <label><span>Year</span><input data-k="year" type="number" min="1950" max="2100"></label>
       </div>
+      `}
       <datalist id="types">${['Short film', 'Feature film', 'Documentary', 'Music video', 'Commercial', 'Fashion film'].map((t) => `<option value="${t}">`).join('')}</datalist>
       <label><span>Address of the page</span><input data-slug value="${esc(p.slug)}"><p class="hint">yoursite.com/work/<b>${esc(p.slug)}</b>/ — changes when you leave the field.</p></label>
 
-      <div>
+      <label><span>Description (optional)</span><textarea data-k="description" rows="4"></textarea></label>
+      ${p.journal ? '' : `<div>
         <h3>Crew</h3>
         <div class="crew">${p.crew.map((c, i) => `
           <div class="line"><input data-crew="${i}" data-f="role" value="${esc(c.role)}" placeholder="Role"><input data-crew="${i}" data-f="name" value="${esc(c.name)}" placeholder="Name"><button class="btn quiet" data-rmcrew="${i}" aria-label="Remove">×</button></div>`).join('')}
@@ -411,12 +424,12 @@ function editor(box, p) {
         <p><button class="btn quiet" data-addcrew>+ Add person</button></p>
       </div>
 
-      <label><span>Description (optional)</span><textarea data-k="description" rows="4"></textarea></label>
       <label><span>Festivals &amp; awards — one per line (optional)</span><textarea data-fest rows="4">${esc((p.festivals || []).join('\n'))}</textarea></label>
       <label><span>Full film or trailer — Vimeo or YouTube link (optional)</span><input data-k="film" placeholder="https://vimeo.com/…"></label>
+      `}
 
       <div>
-        <h3>Shots &amp; stills — the one marked Cover opens the project page</h3>
+        <h3>${p.journal ? 'Photos — Cover is the one shown in the Projects list' : 'Shots &amp; stills — the one marked Cover opens the project page'}</h3>
         <div class="media">
           ${p.media.map((m, i) => mediaCard(p, m, i)).join('')}
           <label class="drop"><input type="file" accept="image/*,.heic,.heif,video/mp4,video/webm,video/quicktime" multiple hidden>Add photos or clips<br>click or drop files</label>
@@ -442,8 +455,8 @@ function editor(box, p) {
 
   el.querySelectorAll('[data-crew]').forEach((inp) => inp.addEventListener('input', () => { p.crew[+inp.dataset.crew][inp.dataset.f] = inp.value; status(); }));
   el.querySelectorAll('[data-rmcrew]').forEach((b) => (b.onclick = () => { p.crew.splice(+b.dataset.rmcrew, 1); render(); }));
-  $('[data-addcrew]', el).onclick = () => { p.crew.push({ role: '', name: '' }); render(); };
-  $('[data-fest]', el).addEventListener('input', (e) => { p.festivals = e.target.value.split('\n').map((s) => s.trim()).filter(Boolean); status(); });
+  if (!p.journal) $('[data-addcrew]', el).onclick = () => { p.crew.push({ role: '', name: '' }); render(); };
+  $('[data-fest]', el)?.addEventListener('input', (e) => { p.festivals = e.target.value.split('\n').map((s) => s.trim()).filter(Boolean); status(); });
 
   el.querySelectorAll('[data-mleft],[data-mright]').forEach((b) => (b.onclick = () => { move(p.media, +(b.dataset.mleft ?? b.dataset.mright), b.dataset.mleft != null ? -1 : 1); render(); }));
   el.querySelectorAll('[data-mrm]').forEach((b) => (b.onclick = () => {
