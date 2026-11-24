@@ -25,6 +25,73 @@
   },
   "projects": [
     {
+      "slug": "mania",
+      "title": "Mania!",
+      "type": "Short film",
+      "year": 2023,
+      "crew": [
+        {
+          "role": "Director",
+          "name": "Lena Jaworska"
+        },
+        {
+          "role": "Director of photography",
+          "name": "Paweł Kozak"
+        }
+      ],
+      "description": "",
+      "festivals": [
+        "Festiwal Polskich Filmów Fabularnych, Gdynia 2023 - nominacja",
+        "Trieste Film Festival 2024 - nominacja",
+        "Festiwal \"Młodzi i Film\" 2023 - nominacja"
+      ],
+      "film": "",
+      "media": [
+        {
+          "id": "mwusen5h68n3",
+          "type": "video",
+          "src": "r2:media/mania/mwusemyk7r7a-mania1-portfolio.mov",
+          "poster": "media/mania/mwusemyk7r7a-mania1-portfolio-poster.webp",
+          "ratio": 1.3724
+        },
+        {
+          "id": "mwuseu46lx7x",
+          "type": "video",
+          "src": "r2:media/mania/mwusetyv41vw-mania2-portfolio.mov",
+          "poster": "media/mania/mwusetyv41vw-mania2-portfolio-poster.webp",
+          "ratio": 1.3724
+        },
+        {
+          "id": "mwuseubgbwmp",
+          "type": "video",
+          "src": "r2:media/mania/mwuseu46h1hf-mania3-portfolio.mov",
+          "poster": "media/mania/mwuseu46h1hf-mania3-portfolio-poster.webp",
+          "ratio": 1.3724
+        },
+        {
+          "id": "mwuseug9b1o7",
+          "type": "video",
+          "src": "r2:media/mania/mwuseubhnwxl-mania4-portfolio.mov",
+          "poster": "media/mania/mwuseubhnwxl-mania4-portfolio-poster.webp",
+          "ratio": 1.3724
+        },
+        {
+          "id": "mwuseumh7v9t",
+          "type": "video",
+          "src": "r2:media/mania/mwuseug9ne5m-mania5-portfolio.mov",
+          "poster": "media/mania/mwuseug9ne5m-mania5-portfolio-poster.webp",
+          "ratio": 1.3724
+        },
+        {
+          "id": "mwuseusgfkzj",
+          "type": "video",
+          "src": "r2:media/mania/mwuseumi7qkv-mania6-portfolio.mov",
+          "poster": "media/mania/mwuseumi7qkv-mania6-portfolio-poster.webp",
+          "ratio": 1.3724
+        }
+      ]
+    },
+    {
       "slug": "profundum",
       "title": "Profundum",
       "type": "Fashion film",
@@ -442,6 +509,22 @@
         1.53274
       ],
       "w": 69
+    },
+    {
+      "p": "mania",
+      "m": "mwusen5h68n3"
+    },
+    {
+      "p": "mania",
+      "m": "mwuseu46lx7x"
+    },
+    {
+      "p": "mania",
+      "m": "mwuseug9b1o7"
+    },
+    {
+      "p": "mania",
+      "m": "mwuseusgfkzj"
     }
   ],
   "homeCanvas": true
